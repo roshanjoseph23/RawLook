@@ -233,4 +233,70 @@ final class LookCoreTests: XCTestCase {
     XCTAssertEqual(OpenablePhotoFile.ignoredNotice(3), "Opened the first photo. 3 other items were ignored.")
   }
 
+  private func curveState() -> EditState {
+    var state = EditState()
+    state.curves = Array(repeating: [[0, 0], [0.5, 0.5], [1, 1]], count: 4)
+    state.normalizeCurveIDs()
+    return state
+  }
+
+  func testCurveRemovalByIDNeverLeavesStaleRows() {
+    var state = curveState()
+    let before = state.curveItems(0)
+    XCTAssertEqual(before.map(\.position), [0, 1, 2])
+    XCTAssertTrue(state.removeCurvePoint(channel: 0, id: before[1].id))
+    let after = state.curveItems(0)
+    XCTAssertEqual(after.map(\.id), [before[0].id, before[2].id])
+    XCTAssertEqual(after.map(\.position), [0, 1])
+    // A second removal with the now-stale id, or of an endpoint, is a no-op rather than a crash.
+    XCTAssertFalse(state.removeCurvePoint(channel: 0, id: before[1].id))
+    XCTAssertFalse(state.removeCurvePoint(channel: 0, id: before[0].id))
+    XCTAssertFalse(state.removeCurvePoint(channel: 0, id: before[2].id))
+    XCTAssertFalse(state.removeCurvePoint(channel: 9, id: before[0].id))
+    XCTAssertNil(state.curvePosition(channel: 0, id: before[1].id))
+    state.adjustCurvePointOutput(channel: 0, id: before[1].id, by: 0.1)
+    state.moveCurvePoint(channel: 0, id: before[1].id, input: 0.3, output: 0.3)
+    XCTAssertEqual(state.curves[0], [[0, 0], [1, 1]])
+    XCTAssertEqual(state.curves[1].count, 3)
+  }
+
+  func testCurveInsertMoveAndClamp() throws {
+    var state = curveState()
+    let id = try XCTUnwrap(state.insertCurvePoint(channel: 2, input: 0.25, output: 1.4))
+    XCTAssertEqual(state.curvePosition(channel: 2, id: id), 1)
+    XCTAssertEqual(state.curves[2][1], [0.25, 1])
+    XCTAssertNil(state.insertCurvePoint(channel: 2, input: 0.252, output: 0.5))
+    XCTAssertNil(state.insertCurvePoint(channel: 2, input: 0, output: 0.5))
+    XCTAssertNil(state.insertCurvePoint(channel: 7, input: 0.4, output: 0.5))
+    state.moveCurvePoint(channel: 2, id: id, input: 0.9, output: -1)
+    XCTAssertEqual(state.curves[2][1][0], 0.5 - EditState.minCurvePointGap, accuracy: 1e-6)
+    XCTAssertEqual(state.curves[2][1][1], 0)
+    let end = state.curveItems(2)[3].id
+    state.moveCurvePoint(channel: 2, id: end, input: 0.2, output: 0.8)
+    XCTAssertEqual(state.curves[2][3], [1, 0.8])
+    XCTAssertEqual(state.curveIDs[2].count, state.curves[2].count)
+  }
+
+  func testCurveIDNormalizationRepairsMismatchedShapes() {
+    var state = EditState()
+    state.curves = [[[0, 0], [1, 1]], [[0, 0], [0.5, 0.4], [1, 1]]]
+    state.curveIDs = [[UUID(), UUID(), UUID()]]
+    XCTAssertEqual(state.curveItems(1).count, 0)
+    state.normalizeCurveIDs()
+    XCTAssertEqual(state.curveIDs.map(\.count), [2, 3])
+    XCTAssertEqual(state.curveItems(1).count, 3)
+    XCTAssertEqual(Set(state.curveIDs.flatMap { $0 }).count, 5)
+  }
+
+  func testNearestCurvePoint() {
+    let state = curveState()
+    let mid = state.curveItems(0)[1].id
+    XCTAssertEqual(
+      state.nearestCurvePoint(
+        channel: 0, location: (105, 95), scale: (200, 200), radius: 24), mid)
+    XCTAssertNil(
+      state.nearestCurvePoint(channel: 0, location: (50, 20), scale: (200, 200), radius: 24))
+    XCTAssertNil(
+      state.nearestCurvePoint(channel: 5, location: (100, 100), scale: (200, 200), radius: 24))
+  }
 }

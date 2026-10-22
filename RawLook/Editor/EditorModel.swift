@@ -154,6 +154,13 @@ final class EditorModel {
       p.perChannelToneCurves.blue
     ]
     if let channel {
+      guard curves.indices.contains(channel) else { return }
+      state.normalizeCurveIDs()
+      guard state.curves.count == curves.count else {
+        state.curves = curves
+        state.curveIDs = curves.map { $0.map { _ in UUID() } }
+        return
+      }
       state.curves[channel] = curves[channel]
       state.curveIDs[channel] = curves[channel].map { _ in UUID() }
     } else {
@@ -161,9 +168,11 @@ final class EditorModel {
       state.curveIDs = curves.map { $0.map { _ in UUID() } }
     }
   }
-  func removeCurvePoint(channel: Int, index: Int) {
-    state.curves[channel].remove(at: index)
-    state.curveIDs[channel].remove(at: index)
+  func removeCurvePoint(channel: Int, id: UUID) {
+    state.removeCurvePoint(channel: channel, id: id)
+  }
+  func adjustCurvePoint(channel: Int, id: UUID, by delta: Float) {
+    state.adjustCurvePointOutput(channel: channel, id: id, by: delta)
   }
   var showingError: Bool {
     get { error != nil }

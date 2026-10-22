@@ -1,25 +1,24 @@
 import SwiftUI
 
+/// One tone-curve point. It renders a value snapshot and acts through closures keyed by the
+/// point's id, so it never reads the curve arrays by a possibly stale index.
 struct CurvePointRow: View {
-  let model: EditorModel
-  let channel: Int
-  let index: Int
+  let item: CurvePointItem
+  let onAdjust: (Float) -> Void
+  let onRemove: () -> Void
   var body: some View {
     HStack {
-      Text("Point \(index+1)")
+      Text("Point \(item.position + 1)")
       Spacer()
-      Text(model.state.curves[channel][index][1], format: .number.precision(.fractionLength(2)))
-      if index > 0 && index < model.state.curves[channel].count - 1 {
-        Button("Remove point \(index+1)", systemImage: "minus.circle", action: remove).labelStyle(
-          .iconOnly)
+      Text(item.output, format: .number.precision(.fractionLength(2)))
+      if !item.isEndpoint {
+        Button("Remove point \(item.position + 1)", systemImage: "minus.circle", action: onRemove)
+          .labelStyle(.iconOnly)
       }
     }
     .accessibilityElement(children: .combine)
     .accessibilityAdjustableAction { direction in
-      let delta: Float = direction == .increment ? 0.01 : -0.01
-      model.state.curves[channel][index][1] = LookMath.clamp(
-        model.state.curves[channel][index][1] + delta)
+      onAdjust(direction == .increment ? 0.01 : -0.01)
     }
   }
-  private func remove() { model.removeCurvePoint(channel: channel, index: index) }
 }

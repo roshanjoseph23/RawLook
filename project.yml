@@ -15,6 +15,8 @@ settings:
     MTL_COMPILER_FLAGS: '-fcikernel'
     MTLLINKER_FLAGS: '-cikernel'
     MTL_FAST_MATH: NO
+    MARKETING_VERSION: '1.0'
+    CURRENT_PROJECT_VERSION: '1'
 targets:
   RawLook:
     type: application
@@ -30,6 +32,13 @@ targets:
     info:
       path: RawLook/Info.plist
       properties:
+        # Explicit icon and version keys. actool also writes the icon keys, but keeping them here
+        # means the merged Info.plist always names the compiled AppIcon (Assets.car and
+        # AppIcon.icns) for the Dock and Finder, and crash reports show a real version.
+        CFBundleIconName: AppIcon
+        CFBundleIconFile: AppIcon
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSSupportsOpeningDocumentsInPlace: true
         CFBundleDocumentTypes:
           - CFBundleTypeName: Camera RAW Image

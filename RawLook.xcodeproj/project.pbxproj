@@ -13,6 +13,7 @@
 		148B0EC35492ABA89D629CB6 /* LookFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7ED4AD990B06FB233B5E1A1 /* LookFilter.swift */; };
 		191FDFBF4E00373E496F3B19 /* Preset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EF3AFD94DF7804EE34125C3 /* Preset.swift */; };
 		1BA5BA60BCFC90DE5B1F2C91 /* CropAspect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C0914F4657D0312F72A8444 /* CropAspect.swift */; };
+		20C224A867141F26F49BA982 /* CurveEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DCDF337D875707FC33E2458 /* CurveEditing.swift */; };
 		27D46ED44633A94933D8776F /* Presets in Resources */ = {isa = PBXBuildFile; fileRef = C37CAC513C3258AB45A15483 /* Presets */; };
 		2BC7CD3BD1D889856DEF4641 /* CurveChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F578F4CD4D8377EBBEC6F460 /* CurveChannel.swift */; };
 		305462AF367B15CF2DE09043 /* UTType+OpenablePhotos.swift in Sources */ = {isa = PBXBuildFile; fileRef = D840BFF4FA269A3A2A721632 /* UTType+OpenablePhotos.swift */; };
@@ -81,6 +82,7 @@
 		4A43183B906157E208820C6E /* CurveCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurveCanvas.swift; sourceTree = "<group>"; };
 		4AAC710B59C26F4AD330370E /* AdjustmentSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdjustmentSlider.swift; sourceTree = "<group>"; };
 		50E67DD294DAF952FF554B34 /* PresetError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetError.swift; sourceTree = "<group>"; };
+		5DCDF337D875707FC33E2458 /* CurveEditing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurveEditing.swift; sourceTree = "<group>"; };
 		5EE39E2CEED8E535E8418B4D /* OpenablePhotoFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenablePhotoFile.swift; sourceTree = "<group>"; };
 		61120A3312230035C3E16E73 /* PhotoDropHighlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoDropHighlight.swift; sourceTree = "<group>"; };
 		61AA3D8D9D657C4526F7A7BB /* EditorModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorModel.swift; sourceTree = "<group>"; };
@@ -165,6 +167,7 @@
 				9C0914F4657D0312F72A8444 /* CropAspect.swift */,
 				39918188F8EF9531A1F05E97 /* CropGeometry.swift */,
 				F578F4CD4D8377EBBEC6F460 /* CurveChannel.swift */,
+				5DCDF337D875707FC33E2458 /* CurveEditing.swift */,
 				8F7CD5B58E00E63FE649952C /* ExportFormat.swift */,
 				6A16D2002076D781F2B4A1E0 /* LookMath.swift */,
 				DD4E0CC6F1B56250F9ECF11F /* LookTable.swift */,
@@ -353,6 +356,7 @@
 				8B2B9E3E01C300E4D2C3C1A8 /* CropOverlay.swift in Sources */,
 				8443A41C44B50D0F04A0810E /* CurveCanvas.swift in Sources */,
 				2BC7CD3BD1D889856DEF4641 /* CurveChannel.swift in Sources */,
+				20C224A867141F26F49BA982 /* CurveEditing.swift in Sources */,
 				F3FF2A5B0DED3278FA32DD1B /* CurveEditor.swift in Sources */,
 				09F457BC768E4CC38DD5A0DB /* CurvePointRow.swift in Sources */,
 				E20E9CBCBA90A1E48A7BA7EC /* EditState.swift in Sources */,
@@ -467,6 +471,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -487,6 +492,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
 				MTLLINKER_FLAGS = "-cikernel";
 				MTL_COMPILER_FLAGS = "-fcikernel";
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
@@ -569,6 +575,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_NS_ASSERTIONS = NO;
@@ -583,6 +590,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
 				MTLLINKER_FLAGS = "-cikernel";
 				MTL_COMPILER_FLAGS = "-fcikernel";
 				MTL_ENABLE_DEBUG_INFO = NO;
