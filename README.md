@@ -26,13 +26,13 @@ RawLook declares document types (role Viewer, rank Alternate) for camera RAW (`p
 
 `.github/workflows/release.yml` runs on GitHub's macOS runners. It regenerates the project with XcodeGen (so new presets are picked up), runs the macOS unit tests, then archives and signs the iOS and macOS apps and produces `RawLook.ipa` and `RawLook.dmg`. Both are uploaded as workflow artefacts, and tag runs also attach them to a GitHub Release.
 
-**Bundle identifier:** `com.roshanjoseph23.rawlook` (tests: `com.roshanjoseph23.rawlook.tests`). Register an explicit App ID with exactly this identifier at developer.apple.com → Certificates, Identifiers & Profiles → Identifiers, and create the provisioning profiles for it. To change it, edit `PRODUCT_BUNDLE_IDENTIFIER` in `project.yml`.
+**Bundle identifier:** `app.rawlook.editor` (tests: `app.rawlook.editor.tests`). Register an explicit App ID with exactly this identifier at developer.apple.com → Certificates, Identifiers & Profiles → Identifiers, and create the provisioning profiles for it. To change it, edit `PRODUCT_BUNDLE_IDENTIFIER` in `project.yml`.
 
 ### What you need from Apple
 
 | Build | Certificate | Provisioning profile |
 | --- | --- | --- |
-| iOS ad-hoc (default) | **Apple Distribution** | **iOS Ad Hoc** profile for `com.roshanjoseph23.rawlook`, with the UDIDs of the iPhones/iPads that will install it |
+| iOS ad-hoc (default) | **Apple Distribution** | **iOS Ad Hoc** profile for `app.rawlook.editor`, with the UDIDs of the iPhones/iPads that will install it |
 | macOS outside the App Store | **Developer ID Application** (Account Holder role required to create it) | None needed; optionally a **Developer ID** profile |
 | macOS fallback without Developer ID | Apple Distribution | **Mac App Store** profile for the same App ID (required). The `.app` is then signed for the store and Gatekeeper will not open it from the DMG, so prefer Developer ID |
 

@@ -56,7 +56,7 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
         # Bundle ID: register this exact App ID in your Apple Developer account.
-        PRODUCT_BUNDLE_IDENTIFIER: com.roshanjoseph23.rawlook
+        PRODUCT_BUNDLE_IDENTIFIER: app.rawlook.editor
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: Select photos to edit in RawLook.
         INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: Save newly exported photos to your library.
@@ -75,7 +75,7 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-        PRODUCT_BUNDLE_IDENTIFIER: com.roshanjoseph23.rawlook.tests
+        PRODUCT_BUNDLE_IDENTIFIER: app.rawlook.editor.tests
         'TEST_HOST[sdk=macosx*]': '$(BUILT_PRODUCTS_DIR)/RawLook.app/Contents/MacOS/RawLook'
         'TEST_HOST[sdk=iphone*]': '$(BUILT_PRODUCTS_DIR)/RawLook.app/RawLook'
         BUNDLE_LOADER: '$(TEST_HOST)'
