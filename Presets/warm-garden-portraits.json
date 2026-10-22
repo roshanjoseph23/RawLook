@@ -1,7 +1,7 @@
 {
   "schema_id": "reference-photo-look",
   "schema_version": "1.0.0",
-  "preset_version": "1.1.0",
+  "preset_version": "1.2.0",
   "profile_id": "d-leong-warm-garden-portraits-v1",
   "name": "Warm Garden Portraits \u2014 reference look",
   "created_date": "2026-10-22",
@@ -99,7 +99,7 @@
     }
   },
   "estimated_creative_pipeline": {
-    "provenance": "v1.1.0 retune by measuring the four reference JPEGs (border-cropped): lifted matte black point, soft highlight roll-off, olive-warm shadows, warm creamy highlights, punchy coral reds, warm muted greens, clean cyan-blue denim. Still an estimate; v1.0.0 kept in Presets/source for reference.",
+    "provenance": "v1.2.0: brighter, airier base tone so camera RAWs at as-shot 0 EV land in the references' range (medians about 0.46-0.60). v1.1.0 retune by measuring the four reference JPEGs (border-cropped): lifted matte black point, soft highlight roll-off, olive-warm shadows, warm creamy highlights, punchy coral reds, warm muted greens, clean cyan-blue denim. Still an estimate; v1.0.0 kept in Presets/source for reference.",
     "confidence": "Medium for the broad visual direction; low for exact numeric match on an unseen RAF.",
     "default_strength": 1.0,
     "execution_order": [
@@ -136,15 +136,15 @@
           "name": "orange",
           "hue_degrees": 30,
           "hue_delta_degrees": -2,
-          "saturation_multiplier": 0.92,
-          "lightness_adjustment": 0.06
+          "saturation_multiplier": 0.9,
+          "lightness_adjustment": 0.08
         },
         {
           "name": "yellow",
           "hue_degrees": 60,
           "hue_delta_degrees": -4,
-          "saturation_multiplier": 1.0,
-          "lightness_adjustment": 0.02
+          "saturation_multiplier": 0.88,
+          "lightness_adjustment": 0.03
         },
         {
           "name": "green",
@@ -164,8 +164,8 @@
           "name": "blue",
           "hue_degrees": 225,
           "hue_delta_degrees": -8,
-          "saturation_multiplier": 0.95,
-          "lightness_adjustment": 0.03
+          "saturation_multiplier": 0.92,
+          "lightness_adjustment": 0.04
         },
         {
           "name": "purple",
@@ -200,42 +200,58 @@
       "points": [
         [
           0,
-          0.022
+          0.04
         ],
         [
-          0.05,
-          0.06
+          0.03,
+          0.085
+        ],
+        [
+          0.08,
+          0.165
         ],
         [
           0.15,
-          0.158
+          0.265
+        ],
+        [
+          0.22,
+          0.355
         ],
         [
           0.3,
-          0.322
+          0.45
+        ],
+        [
+          0.4,
+          0.56
         ],
         [
           0.5,
-          0.545
+          0.66
+        ],
+        [
+          0.6,
+          0.75
         ],
         [
           0.7,
-          0.755
+          0.835
         ],
         [
-          0.85,
-          0.878
+          0.8,
+          0.895
         ],
         [
-          0.95,
-          0.94
+          0.9,
+          0.935
         ],
         [
           1,
           0.96
         ]
       ],
-      "intent": "Matte lifted black point, soft open shadows, bright airy mids and a soft highlight shoulder below pure white.",
+      "intent": "Airy base tone: strong lift of shadows and midtones (Apple RAW renders sit around 0.2-0.3 median), matte black at 0.04 and a soft shoulder to 0.96 white. Exposure stays a per-photo slider.",
       "important": "This curve is a forward creative transform for a neutral baseline. It is not the source photographer's recovered curve. Applying it to the finished reference JPEGs would grade them again."
     },
     "per_channel_tone_curves": {
@@ -301,11 +317,11 @@
         ],
         [
           0.75,
-          0.745
+          0.74
         ],
         [
           1,
-          0.99
+          0.98
         ]
       ],
       "intent": "Olive-green shadow tint (green lifted, blue held down), warm mids, creamy warm highlights.",
@@ -354,7 +370,7 @@
       }
     },
     "white_balance_shift": {
-      "temperature_shift_mireds": 10,
+      "temperature_shift_mireds": 12,
       "tint_shift": 4,
       "space": "Applied at the RAW stage on top of each photo's own white balance (as shot or the per-photo sliders); positive mireds warm, positive tint adds magenta. Scales with strength. Exposure stays per photo."
     }
