@@ -13,6 +13,11 @@ actor PhotoRenderer {
   var source: CIImage?
   var asShot: (Float, Float) = (6500, 0)
   var kernel: CIKernel?
+  var shoulderKernel: CIColorKernel?
+  /// Fujifilm DevelopmentDynamicRange of the open RAF (100/200/400), when present.
+  var dynamicRange: Int?
+  /// The camera's DR push, applied as part of the as-shot RAW development (not the slider).
+  var compensationEV: Float = 0
 
   /// Preview taps are normalized bottom-left coordinates in the uncropped baseline.
   func neutralGains(state: EditState, point: [Double]) throws -> [Float] {
@@ -62,7 +67,7 @@ actor PhotoRenderer {
   func preview(
     state: EditState, preset: Preset?, size: CGFloat, before: Bool, cropEditing: Bool,
     neutralEditing: Bool
-  ) throws -> CGImage {
+  ) throws -> (image: CGImage, info: [String]) {
     try Task.checkCancellation()
     let image: CIImage
     if neutralEditing {
@@ -77,7 +82,9 @@ actor PhotoRenderer {
       )
     else { throw RenderError.message("Preview rendering failed.") }
     try Task.checkCancellation()
-    return cg
+    return (cg, renderInfo(
+      state: state, preset: preset, before: before, previewWidth: cg.width,
+      previewHeight: cg.height, requested: size))
   }
 
 }

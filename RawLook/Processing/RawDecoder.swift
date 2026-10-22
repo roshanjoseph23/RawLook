@@ -53,6 +53,10 @@ extension PhotoRenderer {
       image = decoded
     }
     source = image
+    // Fujifilm DR200/DR400 underexposes the sensor 1-2 stops; the camera pushes it back in its
+    // own JPEG, Apple's decoder does not. Treat that push as part of the as-shot development.
+    dynamicRange = raw != nil ? FujiRAF.developmentDynamicRange(in: data) : nil
+    compensationEV = RawTone.compensationEV(developmentDynamicRange: dynamicRange)
     asShot = (raw?.neutralTemperature ?? 6500, raw?.neutralTint ?? 0)
     rawFilter = raw
     return PhotoInfo(
@@ -90,7 +94,14 @@ extension PhotoRenderer {
     guard let source else { throw RenderError.message("Open a photo first.") }
     var image = source
     if let raw = rawFilter {
-      raw.exposure = state.exposure
+      // Scene-linear development: no Apple boost (tone) curve, which crushed shadows and added
+      // contrast under the look. RawLook adds only a highlight shoulder (RawTone) below.
+      raw.boostAmount = 0
+      // No local tone mapping either, so the development stays predictable (matches LibRaw).
+      if raw.isLocalToneMapSupported { raw.localToneMapAmount = 0 }
+      // The slider is relative to the as-shot development, which includes the camera's DR push.
+      raw.exposure = state.exposure + compensationEV
+      if raw.isLensCorrectionSupported { raw.isLensCorrectionEnabled = true }
       raw.scaleFactor =
         maxSize.map { Float(min(1, $0 / max(image.extent.width, image.extent.height))) } ?? 1
       // Restore file values before applying each immutable edit snapshot.
@@ -107,7 +118,7 @@ extension PhotoRenderer {
       guard let output = raw.outputImage else {
         throw RenderError.message("RAW development failed for this camera.")
       }
-      image = output
+      image = try rawShoulder(output)
     } else {
       if state.exposure != 0 {
         let filter = CIFilter.exposureAdjust()

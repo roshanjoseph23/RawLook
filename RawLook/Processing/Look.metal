@@ -90,6 +90,17 @@ float3 sectorColor(float3 color, thread float4 *anchors, int count) {
     return toRGB(hsl);
 }
 
+/// RAW highlight shoulder (RawTone.shoulder in LookCore): identity below `start`, then an
+/// exponential roll-off with slope 1 at `start` that approaches 1.0. Applied to the linear,
+/// DR-compensated CIRAWFilter output so pushed highlights roll off instead of clipping.
+float shoulder(float x, float start) {
+    if (x <= start) {
+        return x;
+    }
+    float range = 1 - start;
+    return start + range * (1 - exp(-(x - start) / range));
+}
+
 extern "C" {
 namespace coreimage {
 
@@ -141,6 +152,12 @@ float4 rawLook(coreimage::sampler src, coreimage::sampler table,
     }
     color = clamp(color, 0.0f, 1.0f);
     return float4(float3(dec(color.r), dec(color.g), dec(color.b)) * pixel.a, pixel.a);
+}
+
+float4 rawShoulder(coreimage::sample_t s, float start) {
+    float3 c = s.a > 0 ? s.rgb / s.a : float3(0);
+    c = float3(shoulder(c.r, start), shoulder(c.g, start), shoulder(c.b, start));
+    return float4(c * s.a, s.a);
 }
 
 } // namespace coreimage

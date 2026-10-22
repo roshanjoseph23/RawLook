@@ -19,6 +19,7 @@ struct EditorInspector: View {
         AdjustmentSlider(title: "Tint", value: $model.tint, range: -150...150, model: model)
         Button("Pick neutral patch", systemImage: "eyedropper", action: model.startNeutralPicking)
         Button("Reset to As Shot", action: model.resetWB)
+        Toggle("Show render info", isOn: $model.showRenderInfo)
       }
       Section("Preset") {
         Picker("Look", selection: $model.selectedPresetID) {

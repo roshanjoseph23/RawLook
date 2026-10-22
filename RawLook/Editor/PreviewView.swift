@@ -3,6 +3,7 @@ import SwiftUI
 struct PreviewView: View {
   @Bindable var model: EditorModel
   @GestureState private var comparing = false
+  @Environment(\.displayScale) private var displayScale
   var body: some View {
     GeometryReader { proxy in
       ZStack {
@@ -46,6 +47,19 @@ struct PreviewView: View {
             )
           ).foregroundStyle(.white)
         }
+        if model.showRenderInfo, model.preview != nil, !model.renderInfo.isEmpty {
+          VStack(alignment: .leading, spacing: 2) {
+            ForEach(model.renderInfo, id: \.self) { Text($0) }
+          }
+          .font(.caption2.monospaced())
+          .padding(8)
+          .background(.black.opacity(0.6), in: .rect(cornerRadius: 8))
+          .foregroundStyle(.white)
+          .padding(8)
+          .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+          .allowsHitTesting(false)
+          .accessibilityLabel("Render info")
+        }
         if model.busy {
           ProgressView("Processing…").padding().background(
             .regularMaterial, in: .rect(cornerRadius: 12))
@@ -65,6 +79,8 @@ struct PreviewView: View {
           .transition(.opacity)
         }
       }
+      .onChange(of: proxy.size, initial: true) { model.updateViewport(proxy.size, scale: displayScale) }
+      .onChange(of: displayScale) { model.updateViewport(proxy.size, scale: displayScale) }
     }
   }
 }

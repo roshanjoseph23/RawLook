@@ -29,6 +29,16 @@ final class EditorModel {
   var exportDocument: ExportDocument?
   var showExporter = false
   var sourceName = "Photo"
+  /// The preview area in points and the display's pixels per point (Retina is 2).
+  var viewportSize = CGSize(width: 900, height: 900)
+  var displayScale: CGFloat = 2
+  /// What the last preview used (preset, DR push, decoder settings, pixel size).
+  var renderInfo: [String] = []
+  #if DEBUG
+    var showRenderInfo = true
+  #else
+    var showRenderInfo = false
+  #endif
   private var asShot: (Float, Float) = (6500, 0)
   private var undoStack: [EditState] = []
   private var redoStack: [EditState] = []
@@ -37,6 +47,7 @@ final class EditorModel {
   private var renderTask: Task<Void, Never>?
   private var noticeTask: Task<Void, Never>?
   private var generation = 0
+  private var scheduledPreviewSize: CGFloat?
   private let renderer = PhotoRenderer()
   var preset: Preset? { library.presets.first { $0.id == state.presetID } }
   var canUndo: Bool { !undoStack.isEmpty }
@@ -197,6 +208,29 @@ final class EditorModel {
     state.flipHorizontal = false
     state.flipVertical = false
   }
+  /// Long edge, in pixels, to develop the whole (uncropped) image at so the visible preview is
+  /// rendered at the display's full resolution instead of being upscaled.
+  var previewLongEdge: CGFloat {
+    let crop = cropEditing || pickingNeutral ? CropGeometry.Rect() : CropGeometry.clamp(state.crop)
+    let aspect = pickingNeutral ? sourceAspect : imageAspect
+    let width = aspect / max(aspect, 1)
+    let height = 1 / max(aspect, 1)
+    let safe = pickingNeutral ? 1 : CropGeometry.inscribed(
+      width: sourceAspect, height: 1, radians: state.straighten * .pi / 180).height
+    let full = min(
+      viewportSize.width / (width * crop.width),
+      viewportSize.height / (height * crop.height)) * displayScale / safe
+    return min(dragging ? 1600 : 6144, max(dragging ? 600 : 900, full.rounded(.up)))
+  }
+  func updateViewport(_ size: CGSize, scale: CGFloat) {
+    guard size.width > 0, size.height > 0 else { return }
+    viewportSize = size
+    displayScale = max(1, scale)
+    // Compare with the scheduled render, so small resize steps accumulate.
+    if let scheduledPreviewSize,
+      abs(previewLongEdge - scheduledPreviewSize) / scheduledPreviewSize <= 0.05 { return }
+    schedule()
+  }
   func schedule() {
     renderTask?.cancel()
     generation += 1
@@ -207,17 +241,20 @@ final class EditorModel {
     let compare = before || holdingCompare
     let crop = cropEditing
     let neutral = pickingNeutral
+    let size = previewLongEdge
+    scheduledPreviewSize = size
     renderTask = Task {
       do {
         try await Task.sleep(for: .milliseconds(dragging ? 50 : 15))
-        let image = try await renderer.preview(
-          state: snapshot, preset: selected, size: dragging ? 800 : 1800, before: compare,
+        let result = try await renderer.preview(
+          state: snapshot, preset: selected, size: size, before: compare,
           cropEditing: crop, neutralEditing: neutral)
         guard !Task.isCancelled, ticket == generation else { return }
-        let bins = await renderer.histogram(image)
+        let bins = await renderer.histogram(result.image)
         guard !Task.isCancelled, ticket == generation else { return }
-        preview = image
+        preview = result.image
         histogram = bins
+        renderInfo = result.info
       } catch is CancellationError {} catch {
         if ticket == generation { self.error = error.localizedDescription }
       }

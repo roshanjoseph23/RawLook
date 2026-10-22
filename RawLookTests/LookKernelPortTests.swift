@@ -206,7 +206,7 @@ final class LookKernelPortTests: XCTestCase {
     }
   }
 
-  // MARK: Tuned bundled preset (v1.2.0)
+  // MARK: Tuned bundled preset (v1.3.0)
 
   private func tunedPreset() throws -> Preset {
     #if os(Linux)
@@ -223,10 +223,10 @@ final class LookKernelPortTests: XCTestCase {
   func testTunedPresetDecodesWithWhiteBalanceShift() throws {
     let tuned = try tunedPreset()
     let original = try preset()
-    XCTAssertEqual(tuned.presetVersion, "1.2.0")
+    XCTAssertEqual(tuned.presetVersion, "1.3.0")
     XCTAssertNil(original.presetVersion)
     XCTAssertNotEqual(tuned.id, original.id)
-    XCTAssertEqual(tuned.supersedes, [original.id])
+    XCTAssertEqual(tuned.supersedes, [original.id, "warm-garden-portraits-v1-2"])
     XCTAssertEqual(tuned.name, original.name)
     XCTAssertTrue(try tuned.validate().isEmpty)
     let shift = try XCTUnwrap(tuned.estimatedCreativePipeline.whiteBalanceShift)
@@ -256,11 +256,12 @@ final class LookKernelPortTests: XCTestCase {
     XCTAssertGreaterThan(white.min() ?? 0, 0.9)
     XCTAssertGreaterThan(mid[0], mid[2], "warm mids")
     XCTAssertGreaterThan(mid[1], 0.5, "airy, slightly brighter mids")
-    // Airy at as-shot 0 EV: a typical camera RAW midtone (~0.28 encoded) lands in the
-    // references' median range, and the tone stays monotonic.
-    let rawMid = LookMath.apply([0.28, 0.28, 0.28], pipeline: tuned.estimatedCreativePipeline, strength: 1)
-    XCTAssertGreaterThan(rawMid[1], 0.4)
-    XCTAssertLessThan(rawMid[1], 0.55)
+    // RawLook's linear, DR-compensated RAW development puts typical midtones near 0.3-0.4
+    // encoded. The look lifts them moderately (airy, not hazy) and the tone stays monotonic.
+    let rawMid = LookMath.apply([0.3, 0.3, 0.3], pipeline: tuned.estimatedCreativePipeline, strength: 1)
+    XCTAssertGreaterThan(rawMid[1], 0.36)
+    XCTAssertLessThan(rawMid[1], 0.46)
+    XCTAssertLessThan(black.max() ?? 1, 0.06, "matte, not hazy")
     var previous: Float = -1
     for i in 0...100 {
       let v = Float(i) / 100

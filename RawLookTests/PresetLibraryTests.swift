@@ -69,8 +69,8 @@ final class PresetLibraryTests: XCTestCase {
     #endif
     XCTAssertEqual(library.warnings, [])
     XCTAssertEqual(Set(library.presets.map(\.id)).count, library.presets.count)
-    let tuned = try XCTUnwrap(library.presets.first { $0.id == "warm-garden-portraits-v1-2" })
-    XCTAssertEqual(tuned.presetVersion, "1.2.0")
+    let tuned = try XCTUnwrap(library.presets.first { $0.id == "warm-garden-portraits" })
+    XCTAssertEqual(tuned.presetVersion, "1.3.0")
   }
 
   func testTunedPresetSupersedesOriginalWithoutWarning() throws {
@@ -79,7 +79,7 @@ final class PresetLibraryTests: XCTestCase {
     XCTAssertNil(original.supersedes)
     XCTAssertEqual(try Preset.decode(tuned.encoded()), tuned)
     XCTAssertNotEqual(tuned.id, original.id)
-    XCTAssertEqual(tuned.supersedes, [original.id])
+    XCTAssertEqual(tuned.supersedes, [original.id, "warm-garden-portraits-v1-2"])
     // A stale copy of the original next to the tuned preset (old build folder) is hidden.
     let library = PresetLibrary.load(urls: [try originalURL, try tunedURL()])
     XCTAssertEqual(library.presets.map(\.id), [tuned.id])

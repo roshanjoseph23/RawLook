@@ -6,10 +6,7 @@ import UniformTypeIdentifiers
 extension PhotoRenderer {
   func look(_ image: CIImage, preset: Preset, state: EditState) throws -> CIImage {
     if kernel == nil {
-      guard let url = Bundle.main.url(forResource: "default", withExtension: "metallib") else {
-        throw RenderError.message("Missing Core Image Metal library. Check Metal build flags.")
-      }
-      kernel = try CIKernel(functionName: "rawLook", fromMetalLibraryData: Data(contentsOf: url))
+      kernel = try CIKernel(functionName: "rawLook", fromMetalLibraryData: metalLibrary())
     }
     let p = preset.estimatedCreativePipeline
     let curves =
@@ -51,4 +48,23 @@ extension PhotoRenderer {
     return output
   }
 
+
+  func metalLibrary() throws -> Data {
+    guard let url = Bundle.main.url(forResource: "default", withExtension: "metallib") else {
+      throw RenderError.message("Missing Core Image Metal library. Check Metal build flags.")
+    }
+    return try Data(contentsOf: url)
+  }
+
+  /// RawTone.shoulder on the GPU, for linear RAW development.
+  func rawShoulder(_ image: CIImage) throws -> CIImage {
+    if shoulderKernel == nil {
+      shoulderKernel = try CIColorKernel(functionName: "rawShoulder", fromMetalLibraryData: metalLibrary())
+    }
+    guard
+      let output = shoulderKernel?.apply(
+        extent: image.extent, arguments: [image, RawTone.shoulderStart])
+    else { throw RenderError.message("The RAW highlight shoulder could not be rendered.") }
+    return output
+  }
 }
