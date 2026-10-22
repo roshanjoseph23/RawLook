@@ -1,0 +1,1 @@
+../../RawLook/LookCore/OpenablePhotoFile.swift

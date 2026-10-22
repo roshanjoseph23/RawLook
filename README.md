@@ -20,7 +20,14 @@ The app and Metal shader cannot be compiled on Linux. Linux verification covers 
 
 ## Opening files
 
-RawLook declares document types (role Viewer, rank Alternate) for camera RAW (`public.camera-raw-image`, Fujifilm RAF `com.fuji.raw-image`), JPEG, HEIC, PNG and TIFF, so it appears in Finder's **Open With** menu and the iOS Files app. On macOS, files opened from Finder go through the app delegate into the open window; on iOS they arrive through `onOpenURL` and are read in place with security-scoped access. The plist entries live under `info.properties` in `project.yml` and are written to `RawLook/Info.plist` by XcodeGen.
+RawLook opens camera RAW (including Fujifilm RAF), JPEG, HEIC, PNG and TIFF. There are four ways in, and all of them end in the same loader as the **Open** button:
+
+- **Open button / file importer** on both platforms, plus **Photos** on iPhone and iPad.
+- **Drag and drop onto the editor window** (macOS, iPad, and iPhone within apps that support dragging). Drop anywhere on the editor, whether it is empty or already showing a photo; a dashed highlight shows while a file hovers over it. On macOS, files dragged from Finder open in place (the drag grants the sandbox read access). Files dragged from Files or Photos on iPad are copied byte for byte into a private temporary folder, loaded, and the copy is deleted. When an item offers both RAW and JPEG, the RAW is used, so RAW data is never swapped for a JPEG. If several files are dropped, the first supported one opens and a short notice says how many were ignored. Unsupported files (GIF, BMP, PDF, video and so on) show a message saying which formats work.
+- **Finder Open With, double-click and dropping onto the Dock icon** (macOS). RawLook declares document types (role Viewer, rank Alternate) for camera RAW (`public.camera-raw-image`, Fujifilm RAF `com.fuji.raw-image`), JPEG, HEIC, PNG and TIFF. Those declarations also make the Dock icon accept drops of these files. AppKit delivers all of them to the app delegate's `application(_:open:)`, which picks the first supported file and queues it until a window loads it.
+- **Files app "Open in" / share** (iOS). Files arrive through `onOpenURL` and are read in place with security-scoped access.
+
+The plist entries live under `info.properties` in `project.yml` and are written to `RawLook/Info.plist` by XcodeGen. The supported-type rules are in `RawLook/LookCore/OpenablePhotoFile.swift` (file extensions, tested on Linux) and `RawLook/App/UTType+OpenablePhotos.swift` (content types); drop loading is in `RawLook/App/PhotoDrop.swift`.
 
 ## Signed builds via GitHub Actions
 

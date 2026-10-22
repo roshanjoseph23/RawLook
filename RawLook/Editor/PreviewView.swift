@@ -41,7 +41,9 @@ struct PreviewView: View {
         } else {
           ContentUnavailableView(
             "Open a photo", systemImage: "camera.aperture",
-            description: Text("Develop RAW, RAF, JPEG, HEIC, PNG or TIFF entirely on your device.")
+            description: Text(
+              "Drop a RAW, RAF, JPEG, HEIC, PNG or TIFF file here, or choose Open. Everything is developed on your device."
+            )
           ).foregroundStyle(.white)
         }
         if model.busy {
@@ -53,6 +55,14 @@ struct PreviewView: View {
             Text("Tap a neutral patch").padding().background(.regularMaterial)
             Spacer()
           }
+        }
+        if let notice = model.notice {
+          VStack {
+            Spacer()
+            Text(notice).font(.callout).padding(.horizontal, 14).padding(.vertical, 8)
+              .background(.regularMaterial, in: .capsule).padding()
+          }
+          .transition(.opacity)
         }
       }
     }

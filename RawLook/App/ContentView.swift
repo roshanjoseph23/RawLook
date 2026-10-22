@@ -6,6 +6,7 @@ struct ContentView: View {
   @State private var model = EditorModel()
   @State private var importing = false
   @State private var tools = false
+  @State private var dropTargeted = false
   #if os(macOS)
     private let openRequests = OpenRequests.shared
   #endif
@@ -17,6 +18,13 @@ struct ContentView: View {
           PreviewView(model: model)
           if geometry.size.width >= 760 { EditorInspector(model: model).frame(width: 320) }
         }
+        .onDrop(of: UTType.droppablePhotoTypes, isTargeted: $dropTargeted) { providers in
+          model.openDrop(providers)
+        }
+        .overlay {
+          if dropTargeted { PhotoDropHighlight() }
+        }
+        .animation(.easeOut(duration: 0.15), value: dropTargeted)
         .navigationTitle("RawLook")
         .toolbar {
           ToolbarItemGroup {
@@ -66,7 +74,9 @@ struct ContentView: View {
     #if os(macOS)
       .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
       .onChange(of: openRequests.pending, initial: true) {
-        if let url = openRequests.take() { model.openURL(.success([url])) }
+        if let request = openRequests.take() {
+          model.openFile(request.url, ignoredCount: request.ignoredCount)
+        }
       }
     #endif
     .sheet(isPresented: $tools) {

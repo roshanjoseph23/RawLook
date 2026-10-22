@@ -5,11 +5,7 @@ import UniformTypeIdentifiers
 
 extension PhotoRenderer {
   static func isRAW(extension suffix: String, type: UTType?) -> Bool {
-    type?.conforms(to: .rawImage) == true
-      || [
-        "raf", "dng", "cr2", "cr3", "nef", "nrw", "arw", "orf", "rw2", "pef", "srw", "raw", "rwl",
-        "3fr", "iiq"
-      ].contains(suffix.lowercased())
+    type?.conforms(to: .rawImage) == true || OpenablePhotoFile.isRAW(pathExtension: suffix)
   }
   func load(url: URL) throws -> PhotoInfo {
     let scoped = url.startAccessingSecurityScopedResource()

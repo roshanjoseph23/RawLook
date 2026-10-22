@@ -9,6 +9,8 @@ final class EditorModel {
   var library = PresetLibrary()
   var preview: CGImage?
   var error: String?
+  /// A short, self-dismissing message, such as extra dropped files being ignored.
+  var notice: String?
   var busy = false
   var loaded = false
   var isRAW = false
@@ -33,6 +35,7 @@ final class EditorModel {
   private var transaction: EditState?
   private var observedState = EditState()
   private var renderTask: Task<Void, Never>?
+  private var noticeTask: Task<Void, Never>?
   private var generation = 0
   private let renderer = PhotoRenderer()
   var preset: Preset? { library.presets.first { $0.id == state.presetID } }
@@ -215,14 +218,52 @@ final class EditorModel {
     Task {
       do {
         guard let url = try result.get().first else { return }
-        busy = true
-        defer { busy = false }
-        renderTask?.cancel()
-        generation += 1
-        let info = try await renderer.load(url: url)
-        finishLoad(info: info, name: url.deletingPathExtension().lastPathComponent)
-
+        try await load(url: url)
       } catch { self.error = error.localizedDescription }
+    }
+  }
+  /// Opens one file from Finder, the Dock or another app, noting any extra files ignored.
+  func openFile(_ url: URL, ignoredCount: Int = 0) {
+    Task {
+      do {
+        try await load(url: url)
+        showNotice(OpenablePhotoFile.ignoredNotice(ignoredCount))
+      } catch { self.error = error.localizedDescription }
+    }
+  }
+  /// Handles a drag-and-drop onto the editor. Returns false only when nothing was dropped;
+  /// unsupported files are accepted and then reported, rather than silently refused.
+  func openDrop(_ providers: [NSItemProvider]) -> Bool {
+    guard !providers.isEmpty else { return false }
+    Task {
+      busy = true
+      defer { busy = false }
+      do {
+        let dropped = try await PhotoDrop.receive(providers)
+        defer { dropped.photo.removeTemporaryCopy() }
+        try await load(url: dropped.photo.url)
+        showNotice(OpenablePhotoFile.ignoredNotice(dropped.ignoredCount))
+      } catch { self.error = error.localizedDescription }
+    }
+    return true
+  }
+  /// The single loading path shared by the open panel, Finder/Dock opens, onOpenURL and drops.
+  private func load(url: URL) async throws {
+    busy = true
+    defer { busy = false }
+    renderTask?.cancel()
+    generation += 1
+    let info = try await renderer.load(url: url)
+    finishLoad(info: info, name: url.deletingPathExtension().lastPathComponent)
+  }
+  func showNotice(_ text: String?) {
+    noticeTask?.cancel()
+    notice = text
+    guard text != nil else { return }
+    noticeTask = Task {
+      try? await Task.sleep(for: .seconds(4))
+      guard !Task.isCancelled else { return }
+      notice = nil
     }
   }
   func openPhoto() {

@@ -205,4 +205,32 @@ final class LookCoreTests: XCTestCase {
     XCTAssertEqual(CurveChannel.allCases.map(\.rawValue), [0, 1, 2, 3])
   }
 
+  func testOpenablePhotoFileFiltering() throws {
+    for suffix in ["RAF", "raf", "dng", "CR3", "nef", "arw"] {
+      XCTAssertTrue(OpenablePhotoFile.isRAW(pathExtension: suffix), suffix)
+      XCTAssertTrue(OpenablePhotoFile.isOpenable(pathExtension: suffix), suffix)
+    }
+    for suffix in ["jpg", "JPEG", "heic", "HEIF", "png", "tif", "TIFF"] {
+      XCTAssertFalse(OpenablePhotoFile.isRAW(pathExtension: suffix), suffix)
+      XCTAssertTrue(OpenablePhotoFile.isOpenable(pathExtension: suffix), suffix)
+    }
+    for suffix in ["", "gif", "bmp", "pdf", "mov", "txt", "json", "xmp"] {
+      XCTAssertFalse(OpenablePhotoFile.isOpenable(pathExtension: suffix), suffix)
+    }
+    XCTAssertTrue(OpenablePhotoFile.isOpenable(URL(fileURLWithPath: "/tmp/DSCF0001.RAF")))
+    XCTAssertFalse(OpenablePhotoFile.isOpenable(URL(fileURLWithPath: "/tmp/DSCF0001.RAF.xmp")))
+    XCTAssertFalse(OpenablePhotoFile.isOpenable(try XCTUnwrap(URL(string: "https://example.com/a.jpg"))))
+
+    let urls = ["notes.txt", "a.raf", "b.jpg", "c.gif"].map { URL(fileURLWithPath: "/tmp/" + $0) }
+    let pick = OpenablePhotoFile.pick(urls, where: OpenablePhotoFile.isOpenable)
+    XCTAssertEqual(pick?.item.lastPathComponent, "a.raf")
+    XCTAssertEqual(pick?.ignoredCount, 3)
+    XCTAssertNil(OpenablePhotoFile.pick([URL(fileURLWithPath: "/tmp/x.gif")], where: OpenablePhotoFile.isOpenable))
+    XCTAssertNil(OpenablePhotoFile.pick([URL](), where: OpenablePhotoFile.isOpenable))
+    XCTAssertEqual(OpenablePhotoFile.pick(Array(urls[1...1]), where: OpenablePhotoFile.isOpenable)?.ignoredCount, 0)
+    XCTAssertNil(OpenablePhotoFile.ignoredNotice(0))
+    XCTAssertEqual(OpenablePhotoFile.ignoredNotice(1), "Opened the first photo. 1 other item was ignored.")
+    XCTAssertEqual(OpenablePhotoFile.ignoredNotice(3), "Opened the first photo. 3 other items were ignored.")
+  }
+
 }
