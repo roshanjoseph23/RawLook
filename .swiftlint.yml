@@ -1,0 +1,8 @@
+excluded:
+  - LinuxCheck/.build
+  - RawLook.xcodeproj
+identifier_name:
+  min_length: 1
+line_length:
+  warning: 140
+  error: 200

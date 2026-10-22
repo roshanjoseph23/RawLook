@@ -1,0 +1,7 @@
+xcuserdata/
+DerivedData/
+.build/
+*.xcuserstate
+LinuxCheck/.build/
+LinuxCheck/Package.resolved
+.DS_Store

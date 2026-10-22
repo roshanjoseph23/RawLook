@@ -1,0 +1,64 @@
+name: RawLook
+options:
+  minimumXcodeGenVersion: 2.42.0
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    SWIFT_STRICT_CONCURRENCY: complete
+    IPHONEOS_DEPLOYMENT_TARGET: '17.0'
+    MACOSX_DEPLOYMENT_TARGET: '14.0'
+    DEVELOPMENT_TEAM: ''
+    CODE_SIGN_STYLE: Automatic
+    MTL_COMPILER_FLAGS: '-fcikernel'
+    MTLLINKER_FLAGS: '-cikernel'
+    MTL_FAST_MATH: NO
+targets:
+  RawLook:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: RawLook
+        excludes: [RawLook.entitlements]
+      - path: Presets
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        TARGETED_DEVICE_FAMILY: '1,2'
+        SUPPORTS_MACCATALYST: NO
+        'ENABLE_HARDENED_RUNTIME[sdk=macosx*]': YES
+        'ENABLE_APP_SANDBOX[sdk=macosx*]': YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.rawlook
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: Select photos to edit in RawLook.
+        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: Save newly exported photos to your library.
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.photography
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        'CODE_SIGN_ENTITLEMENTS[sdk=macosx*]': RawLook/RawLook.entitlements
+  RawLookTests:
+    type: bundle.unit-test
+    supportedDestinations: [iOS, macOS]
+    sources: [RawLookTests]
+    dependencies:
+      - target: RawLook
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.rawlook.tests
+        'TEST_HOST[sdk=macosx*]': '$(BUILT_PRODUCTS_DIR)/RawLook.app/Contents/MacOS/RawLook'
+        'TEST_HOST[sdk=iphone*]': '$(BUILT_PRODUCTS_DIR)/RawLook.app/RawLook'
+        BUNDLE_LOADER: '$(TEST_HOST)'
+schemes:
+  RawLook:
+    build:
+      targets:
+        RawLook: all
+        RawLookTests: [test]
+    test:
+      targets: [RawLookTests]

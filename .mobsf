@@ -1,0 +1,4 @@
+---
+- ignore-paths:
+    - LinuxCheck
+    - RawLook.xcodeproj
