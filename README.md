@@ -104,9 +104,9 @@ LinuxCheck is an independent, dependency-free verification package, excluded fro
 
 ## Add a preset
 
-Drop a schema-v1 JSON into `Presets/`, regenerate the project, then build. No code changes are needed. Every JSON directly in `Presets/` is bundled. `Presets/source/` keeps the user's original JSONs for reference only and is not shipped in the app (the test target bundles it). The bundled `Presets/warm-garden-portraits.json` is the tuned v1.1.0 of the original v1.0.0 in `Presets/source/`. Duplicate profile IDs and invalid presets appear as warnings in the inspector. Unsupported enabled extra effects are reported and skipped. GPU capacity is 16 anchors and 16 knots per curve; larger definitions are rejected with a visible error.
+Drop a schema-v1 JSON into `Presets/`, regenerate the project, then build. No code changes are needed. Every JSON directly in `Presets/` is bundled. `Presets/source/` keeps the user's original JSONs for reference only and is not shipped in the app (the test target bundles it). The bundled `Presets/warm-garden-portraits.json` is the tuned v1.2.0 of the original v1.0.0 in `Presets/source/`. Presets with the same profile ID resolve silently to the highest `preset_version` (for example a stale copy of an older version left in a build folder), and a preset can list ids it replaces in an optional `supersedes` array (the tuned `warm-garden-portraits-v1-2` supersedes the original id). Only same-id, same-version presets with different content, and invalid presets, appear as warnings in the inspector. Unsupported enabled extra effects are reported and skipped. GPU capacity is 16 anchors and 16 knots per curve; larger definitions are rejected with a visible error.
 
-Optional fields (older JSONs load unchanged): top-level `preset_version`, and inside `estimated_creative_pipeline`:
+Optional fields (older JSONs load unchanged): top-level `preset_version` and `supersedes`, and inside `estimated_creative_pipeline`:
 
 ```json
 "white_balance_shift": { "temperature_shift_mireds": 10, "tint_shift": 4 }

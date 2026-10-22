@@ -2,7 +2,10 @@
   "schema_id": "reference-photo-look",
   "schema_version": "1.0.0",
   "preset_version": "1.2.0",
-  "profile_id": "d-leong-warm-garden-portraits-v1",
+  "profile_id": "warm-garden-portraits-v1-2",
+  "supersedes": [
+    "d-leong-warm-garden-portraits-v1"
+  ],
   "name": "Warm Garden Portraits \u2014 reference look",
   "created_date": "2026-10-22",
   "intended_use": "Machine-readable reference analysis and an estimated creative look for a custom application developing Fujifilm RAF files.",

@@ -6,6 +6,9 @@ struct Preset: Codable, Sendable, Equatable, Identifiable {
   /// Version of this preset's tuning (optional; older JSON files omit it).
   var presetVersion: String?
   var profileId: String
+  /// Optional ids of presets this one replaces (for example the original JSON it was tuned
+  /// from). A superseded preset is not listed in the app.
+  var supersedes: [String]?
   var name: String
   var createdDate: String
   var intendedUse: String
