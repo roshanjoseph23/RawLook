@@ -7,6 +7,9 @@ settings:
     SWIFT_STRICT_CONCURRENCY: complete
     IPHONEOS_DEPLOYMENT_TARGET: '17.0'
     MACOSX_DEPLOYMENT_TARGET: '14.0'
+    # Local builds use automatic signing. CI (.github/workflows/release.yml) overrides
+    # CODE_SIGN_STYLE=Manual, CODE_SIGN_IDENTITY, DEVELOPMENT_TEAM and
+    # PROVISIONING_PROFILE_SPECIFIER on the xcodebuild command line.
     DEVELOPMENT_TEAM: ''
     CODE_SIGN_STYLE: Automatic
     MTL_COMPILER_FLAGS: '-fcikernel'
@@ -18,10 +21,31 @@ targets:
     supportedDestinations: [iOS, macOS]
     sources:
       - path: RawLook
-        excludes: [RawLook.entitlements]
+        excludes: [RawLook.entitlements, Info.plist]
       - path: Presets
         type: folder
         buildPhase: resources
+    # Merged with the generated Info.plist (GENERATE_INFOPLIST_FILE). Declares the
+    # photo types RawLook can open from Finder "Open With" and the iOS Files app.
+    info:
+      path: RawLook/Info.plist
+      properties:
+        LSSupportsOpeningDocumentsInPlace: true
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Camera RAW Image
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [public.camera-raw-image, com.fuji.raw-image]
+          - CFBundleTypeName: Image
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [public.jpeg, public.heic, public.png, public.tiff]
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: com.fuji.raw-image
+            UTTypeDescription: Fujifilm RAW Image
+            UTTypeConformsTo: [public.camera-raw-image]
+            UTTypeTagSpecification:
+              public.filename-extension: [raf, RAF]
     settings:
       base:
         TARGETED_DEVICE_FAMILY: '1,2'
@@ -31,7 +55,8 @@ targets:
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.rawlook
+        # Bundle ID: register this exact App ID in your Apple Developer account.
+        PRODUCT_BUNDLE_IDENTIFIER: com.roshanjoseph23.rawlook
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: Select photos to edit in RawLook.
         INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: Save newly exported photos to your library.
@@ -50,7 +75,7 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.rawlook.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.roshanjoseph23.rawlook.tests
         'TEST_HOST[sdk=macosx*]': '$(BUILT_PRODUCTS_DIR)/RawLook.app/Contents/MacOS/RawLook'
         'TEST_HOST[sdk=iphone*]': '$(BUILT_PRODUCTS_DIR)/RawLook.app/RawLook'
         BUNDLE_LOADER: '$(TEST_HOST)'

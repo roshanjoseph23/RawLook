@@ -14,9 +14,75 @@ xcodegen generate
 open RawLook.xcodeproj
 ```
 
-The generated `RawLook.xcodeproj` is committed. Regenerate with `xcodegen generate` after adding presets or source files, or changing `project.yml`, and keep the generated project. Select the RawLook scheme and a Mac or iOS destination, set your signing team, then build. Run RawLookTests using Product → Test. The empty AppIcon set is a placeholder; supply artwork before distribution. macOS uses only sandbox and user-selected read/write entitlements.
+The generated `RawLook.xcodeproj` is committed. Regenerate with `xcodegen generate` after adding presets or source files, or changing `project.yml`, and keep the generated project. Select the RawLook scheme and a Mac or iOS destination, set your signing team, then build. Run RawLookTests using Product → Test. The app icon (warm palette aperture) is generated artwork in `AppIcon.appiconset`: a single 1024 px iOS icon plus all macOS sizes. macOS uses only sandbox and user-selected read/write entitlements.
 
 The app and Metal shader cannot be compiled on Linux. Linux verification covers the Foundation-only executable model, color mathematics and geometry, not Apple framework integration. XcodeGen is available in this Linux workspace at `/workspace/XcodeGen/.build/release/xcodegen`; project generation is verified here.
+
+## Opening files
+
+RawLook declares document types (role Viewer, rank Alternate) for camera RAW (`public.camera-raw-image`, Fujifilm RAF `com.fuji.raw-image`), JPEG, HEIC, PNG and TIFF, so it appears in Finder's **Open With** menu and the iOS Files app. On macOS, files opened from Finder go through the app delegate into the open window; on iOS they arrive through `onOpenURL` and are read in place with security-scoped access. The plist entries live under `info.properties` in `project.yml` and are written to `RawLook/Info.plist` by XcodeGen.
+
+## Signed builds via GitHub Actions
+
+`.github/workflows/release.yml` runs on GitHub's macOS runners. It regenerates the project with XcodeGen (so new presets are picked up), runs the macOS unit tests, then archives and signs the iOS and macOS apps and produces `RawLook.ipa` and `RawLook.dmg`. Both are uploaded as workflow artefacts, and tag runs also attach them to a GitHub Release.
+
+**Bundle identifier:** `com.roshanjoseph23.rawlook` (tests: `com.roshanjoseph23.rawlook.tests`). Register an explicit App ID with exactly this identifier at developer.apple.com → Certificates, Identifiers & Profiles → Identifiers, and create the provisioning profiles for it. To change it, edit `PRODUCT_BUNDLE_IDENTIFIER` in `project.yml`.
+
+### What you need from Apple
+
+| Build | Certificate | Provisioning profile |
+| --- | --- | --- |
+| iOS ad-hoc (default) | **Apple Distribution** | **iOS Ad Hoc** profile for `com.roshanjoseph23.rawlook`, with the UDIDs of the iPhones/iPads that will install it |
+| macOS outside the App Store | **Developer ID Application** (Account Holder role required to create it) | None needed; optionally a **Developer ID** profile |
+| macOS fallback without Developer ID | Apple Distribution | **Mac App Store** profile for the same App ID (required). The `.app` is then signed for the store and Gatekeeper will not open it from the DMG, so prefer Developer ID |
+
+### Repository secrets
+
+Add these under GitHub → repo → Settings → Secrets and variables → Actions → New repository secret.
+
+Required:
+
+- `APPLE_CERTIFICATE_P12_BASE64`: the Apple Distribution certificate and private key as a base64 `.p12`.
+- `APPLE_CERTIFICATE_PASSWORD`: the password you set when exporting that `.p12`.
+- `APPLE_TEAM_ID`: your 10-character Team ID (developer.apple.com → Membership details).
+- `IOS_PROVISIONING_PROFILE_BASE64`: the iOS profile (`.mobileprovision`) as base64.
+
+Optional:
+
+- `MAC_CERTIFICATE_P12_BASE64` and `MAC_CERTIFICATE_PASSWORD`: a Developer ID Application `.p12` and its password. If absent, the main certificate is used for the Mac build (unless that `.p12` itself contains a Developer ID identity).
+- `MAC_PROVISIONING_PROFILE_BASE64`: macOS profile (`.provisionprofile`). Not needed for Developer ID; required otherwise.
+- `IOS_EXPORT_METHOD`: `ad-hoc` (default), `development`, `app-store-connect` or `enterprise`. Older names are mapped to the current Xcode names (`release-testing`, `debugging`). A manual run can override it.
+- `KEYCHAIN_PASSWORD`: password for the temporary CI keychain. A random one is generated when absent.
+- Notarization (Developer ID only), either `APPLE_ID` + `APPLE_APP_SPECIFIC_PASSWORD` (create one at account.apple.com → Sign-In and Security → App-Specific Passwords), or `ASC_KEY_ID` + `ASC_ISSUER_ID` + `ASC_KEY_P8_BASE64` (an App Store Connect API key). With neither, notarization is skipped and the DMG is signed but not notarized.
+
+The workflow stops at the start with a list of any missing required secret. Secrets are never printed. The keychain and profiles are deleted at the end of every run.
+
+### Exporting the certificate as .p12
+
+1. Create the certificate at developer.apple.com → Certificates (or in Xcode → Settings → Accounts → Manage Certificates), and make sure it is in your login keychain on this Mac.
+2. Open **Keychain Access**, choose **login** → **My Certificates**, and find "Apple Distribution: …" (or "Developer ID Application: …"). Expand it to check that a private key sits under it.
+3. Right-click the certificate → **Export…**, choose **Personal Information Exchange (.p12)**, save it and set a password. That password is `APPLE_CERTIFICATE_PASSWORD` (or `MAC_CERTIFICATE_PASSWORD`).
+
+### Base64-encoding files for secrets
+
+Each command copies the base64 text to the clipboard, ready to paste into the secret:
+
+```sh
+base64 -i AppleDistribution.p12 | pbcopy           # APPLE_CERTIFICATE_P12_BASE64
+base64 -i DeveloperIDApplication.p12 | pbcopy      # MAC_CERTIFICATE_P12_BASE64
+base64 -i RawLook_AdHoc.mobileprovision | pbcopy   # IOS_PROVISIONING_PROFILE_BASE64
+base64 -i RawLook_Mac.provisionprofile | pbcopy    # MAC_PROVISIONING_PROFILE_BASE64
+base64 -i AuthKey_XXXXXXXXXX.p8 | pbcopy           # ASC_KEY_P8_BASE64
+```
+
+Delete the exported `.p12` files afterwards.
+
+### Triggering a build
+
+- **Release:** `git tag v0.1.0 && git push origin v0.1.0`. The run attaches `RawLook.ipa` and `RawLook.dmg` to the `v0.1.0` release, creating it if needed.
+- **Manual:** GitHub → Actions → **Signed release** → **Run workflow**, optionally picking an iOS export method. The files appear under the run's Artifacts. No release is created.
+
+Install the ad-hoc `.ipa` on a registered device with Apple Configurator, Finder (drag onto the device) or Xcode → Devices and Simulators.
 
 ## Linux core verification
 

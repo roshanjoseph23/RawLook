@@ -6,6 +6,9 @@ struct ContentView: View {
   @State private var model = EditorModel()
   @State private var importing = false
   @State private var tools = false
+  #if os(macOS)
+    private let openRequests = OpenRequests.shared
+  #endif
   var body: some View {
     @Bindable var model = model
     GeometryReader { geometry in
@@ -56,6 +59,16 @@ struct ContentView: View {
       model.schedule()
     }
     .onChange(of: model.photo) { model.openPhoto() }
+    .onOpenURL { url in
+      guard url.isFileURL else { return }
+      model.openURL(.success([url]))
+    }
+    #if os(macOS)
+      .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
+      .onChange(of: openRequests.pending, initial: true) {
+        if let url = openRequests.take() { model.openURL(.success([url])) }
+      }
+    #endif
     .sheet(isPresented: $tools) {
       NavigationStack {
         EditorInspector(model: model).toolbar {
@@ -65,7 +78,7 @@ struct ContentView: View {
     }
     .fileImporter(
       isPresented: $importing,
-      allowedContentTypes: [.image, .rawImage, UTType("com.fuji.raw-image") ?? .rawImage],
+      allowedContentTypes: UTType.openablePhotoTypes,
       allowsMultipleSelection: false, onCompletion: model.openURL
     )
     .fileExporter(

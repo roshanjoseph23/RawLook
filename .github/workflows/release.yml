@@ -1,0 +1,396 @@
+name: Signed release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      ios_export_method:
+        description: "iOS export method (default = IOS_EXPORT_METHOD secret, else ad-hoc)"
+        required: false
+        default: default
+        type: choice
+        options:
+          - default
+          - ad-hoc
+          - release-testing
+          - development
+          - debugging
+          - app-store-connect
+          - enterprise
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PROJECT: RawLook.xcodeproj
+  SCHEME: RawLook
+  APP_NAME: RawLook
+
+jobs:
+  build:
+    name: Test, sign and package
+    runs-on: macos-15
+    timeout-minutes: 90
+    env:
+      APPLE_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      MAC_CERTIFICATE_P12_BASE64: ${{ secrets.MAC_CERTIFICATE_P12_BASE64 }}
+      MAC_CERTIFICATE_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+      MAC_PROVISIONING_PROFILE_BASE64: ${{ secrets.MAC_PROVISIONING_PROFILE_BASE64 }}
+      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+      IOS_EXPORT_METHOD_SECRET: ${{ secrets.IOS_EXPORT_METHOD }}
+      IOS_EXPORT_METHOD_INPUT: ${{ github.event.inputs.ios_export_method }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+
+    steps:
+      - name: Check required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          for name in APPLE_CERTIFICATE_P12_BASE64 APPLE_CERTIFICATE_PASSWORD APPLE_TEAM_ID IOS_PROVISIONING_PROFILE_BASE64; do
+            if [ -z "${!name:-}" ]; then missing+=("$name"); fi
+          done
+          if [ -n "${MAC_CERTIFICATE_P12_BASE64:-}" ] && [ -z "${MAC_CERTIFICATE_PASSWORD:-}" ]; then
+            missing+=("MAC_CERTIFICATE_PASSWORD (required because MAC_CERTIFICATE_P12_BASE64 is set)")
+          fi
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error title=Missing secrets::Add these repository secrets (Settings > Secrets and variables > Actions): ${missing[*]}"
+            printf ' - %s\n' "${missing[@]}"
+            exit 1
+          fi
+          echo "All required signing secrets are present."
+
+      - uses: actions/checkout@v4
+
+      - name: Select latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Generate Xcode project
+        shell: bash
+        run: |
+          set -euo pipefail
+          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+          xcodegen generate
+          xcodebuild -version
+
+      - name: Read bundle identifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUNDLE_ID=$(xcodebuild -project "$PROJECT" -target "$APP_NAME" -sdk iphoneos -showBuildSettings 2>/dev/null \
+            | awk -F' = ' '/^ *PRODUCT_BUNDLE_IDENTIFIER = /{print $2; exit}')
+          if [ -z "$BUNDLE_ID" ]; then echo "::error::Could not read PRODUCT_BUNDLE_IDENTIFIER"; exit 1; fi
+          echo "Bundle identifier: $BUNDLE_ID"
+          echo "BUNDLE_ID=$BUNDLE_ID" >> "$GITHUB_ENV"
+
+      - name: Run unit tests (macOS)
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild test \
+            -project "$PROJECT" -scheme "$SCHEME" \
+            -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedDataTests" \
+            -resultBundlePath "$RUNNER_TEMP/RawLookTests.xcresult" \
+            CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER=
+
+      - name: Import certificates into a temporary keychain
+        shell: bash
+        run: |
+          set -euo pipefail
+          KEYCHAIN_PATH="$RUNNER_TEMP/rawlook-signing.keychain-db"
+          KC_PASS="${KEYCHAIN_PASSWORD:-}"
+          if [ -z "$KC_PASS" ]; then KC_PASS=$(openssl rand -hex 32); fi
+          echo "::add-mask::$KC_PASS"
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
+
+          security create-keychain -p "$KC_PASS" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KC_PASS" "$KEYCHAIN_PATH"
+
+          import_p12() { # $1 = base64 var name, $2 = password var name, $3 = file
+            printf '%s' "${!1}" | base64 --decode > "$3"
+            security import "$3" -k "$KEYCHAIN_PATH" -P "${!2}" -f pkcs12 \
+              -T /usr/bin/codesign -T /usr/bin/security -T /usr/bin/productbuild >/dev/null
+            rm -f "$3"
+          }
+          import_p12 APPLE_CERTIFICATE_P12_BASE64 APPLE_CERTIFICATE_PASSWORD "$RUNNER_TEMP/main.p12"
+          if [ -n "${MAC_CERTIFICATE_P12_BASE64:-}" ]; then
+            import_p12 MAC_CERTIFICATE_P12_BASE64 MAC_CERTIFICATE_PASSWORD "$RUNNER_TEMP/mac.p12"
+          fi
+
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KC_PASS" "$KEYCHAIN_PATH" >/dev/null
+          # Put the temporary keychain first in the search list, keeping existing keychains.
+          existing=()
+          while IFS= read -r kc; do existing+=("$kc"); done < <(security list-keychains -d user | sed -e 's/^ *"//' -e 's/"$//')
+          security list-keychains -d user -s "$KEYCHAIN_PATH" "${existing[@]}"
+
+          identities=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | sed -n 's/^ *[0-9]*) [0-9A-F]* "\(.*\)"$/\1/p')
+          echo "Signing identities found:"
+          printf '  %s\n' "$identities"
+
+          pick() { printf '%s\n' "$identities" | grep -E "$1" | head -n1 || true; }
+          IOS_IDENTITY=$(pick '^(Apple Distribution|iPhone Distribution):')
+          [ -n "$IOS_IDENTITY" ] || IOS_IDENTITY=$(pick '^(Apple Development|iPhone Developer):')
+          MAC_IDENTITY=$(pick '^Developer ID Application:')
+          MAC_HAS_DEVELOPER_ID=false
+          if [ -n "$MAC_IDENTITY" ]; then
+            MAC_HAS_DEVELOPER_ID=true
+          else
+            MAC_IDENTITY=$(pick '^(Apple Distribution|3rd Party Mac Developer Application):')
+            [ -n "$MAC_IDENTITY" ] || MAC_IDENTITY=$(pick '^(Apple Development|Mac Developer):')
+          fi
+          if [ -z "$IOS_IDENTITY" ]; then
+            echo "::error::No Apple Distribution / Apple Development identity found in APPLE_CERTIFICATE_P12_BASE64 (make sure the .p12 includes the private key)."
+            exit 1
+          fi
+          if [ -z "$MAC_IDENTITY" ]; then echo "::error::No usable macOS signing identity found."; exit 1; fi
+          {
+            echo "IOS_IDENTITY=$IOS_IDENTITY"
+            echo "MAC_IDENTITY=$MAC_IDENTITY"
+            echo "MAC_HAS_DEVELOPER_ID=$MAC_HAS_DEVELOPER_ID"
+          } >> "$GITHUB_ENV"
+          echo "iOS identity: $IOS_IDENTITY"
+          echo "macOS identity: $MAC_IDENTITY (Developer ID: $MAC_HAS_DEVELOPER_ID)"
+
+      - name: Install provisioning profiles
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIRS=("$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles")
+          for d in "${DIRS[@]}"; do mkdir -p "$d"; done
+
+          install_profile() { # $1 = base64 var, $2 = env prefix, $3 = extension
+            local raw="$RUNNER_TEMP/$2.$3" plist="$RUNNER_TEMP/$2.plist"
+            printf '%s' "${!1}" | base64 --decode > "$raw"
+            security cms -D -i "$raw" > "$plist"
+            local uuid name team appid
+            uuid=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$plist")
+            name=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$plist")
+            team=$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' "$plist")
+            appid=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$plist" 2>/dev/null \
+              || /usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.application-identifier' "$plist")
+            for d in "${DIRS[@]}"; do cp "$raw" "$d/$uuid.$3"; done
+            rm -f "$raw" "$plist"
+            if [ "$team" != "$APPLE_TEAM_ID" ]; then
+              echo "::error::$2 profile '$name' belongs to team $team, but APPLE_TEAM_ID does not match it."
+              exit 1
+            fi
+            if [ "$appid" != "$team.$BUNDLE_ID" ] && [ "$appid" != "$team.*" ]; then
+              echo "::warning::$2 profile '$name' is for App ID '$appid', expected '$team.$BUNDLE_ID'. Signing will likely fail."
+            fi
+            echo "$2 profile: '$name' ($uuid) for $appid"
+            { echo "${2}_PROFILE_NAME=$name"; echo "${2}_PROFILE_UUID=$uuid"; } >> "$GITHUB_ENV"
+          }
+
+          install_profile IOS_PROVISIONING_PROFILE_BASE64 IOS mobileprovision
+          if [ -n "${MAC_PROVISIONING_PROFILE_BASE64:-}" ]; then
+            install_profile MAC_PROVISIONING_PROFILE_BASE64 MAC provisionprofile
+          else
+            echo "MAC_PROFILE_NAME=" >> "$GITHUB_ENV"
+            if [ "$MAC_HAS_DEVELOPER_ID" != "true" ]; then
+              echo "::error::MAC_PROVISIONING_PROFILE_BASE64 is required when no Developer ID Application certificate is provided."
+              exit 1
+            fi
+            echo "No macOS profile supplied; signing Developer ID build without a profile."
+          fi
+
+      - name: Archive and export iOS app
+        shell: bash
+        run: |
+          set -euo pipefail
+          METHOD="${IOS_EXPORT_METHOD_INPUT:-}"
+          [ "$METHOD" != "default" ] || METHOD=""
+          [ -n "$METHOD" ] || METHOD="${IOS_EXPORT_METHOD_SECRET:-}"
+          [ -n "$METHOD" ] || METHOD="ad-hoc"
+          # Xcode 15.3+ names; legacy names are translated.
+          case "$METHOD" in
+            ad-hoc|release-testing) METHOD=release-testing ;;
+            development|debugging) METHOD=debugging ;;
+            app-store|app-store-connect) METHOD=app-store-connect ;;
+            enterprise) METHOD=enterprise ;;
+            *) echo "::error::Unsupported iOS export method '$METHOD'"; exit 1 ;;
+          esac
+          echo "iOS export method: $METHOD"
+
+          ARCHIVE="$RUNNER_TEMP/RawLook-iOS.xcarchive"
+          xcodebuild archive \
+            -project "$PROJECT" -scheme "$SCHEME" \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$ARCHIVE" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedDataIOS" \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_IDENTITY="$IOS_IDENTITY" \
+            PROVISIONING_PROFILE_SPECIFIER="$IOS_PROFILE_NAME" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
+
+          PLIST="$RUNNER_TEMP/ExportOptions-iOS.plist"
+          plutil -create xml1 "$PLIST"
+          /usr/libexec/PlistBuddy \
+            -c "Add :method string $METHOD" \
+            -c "Add :teamID string $APPLE_TEAM_ID" \
+            -c "Add :signingStyle string manual" \
+            -c "Add :signingCertificate string $IOS_IDENTITY" \
+            -c "Add :provisioningProfiles dict" \
+            -c "Add :provisioningProfiles:$BUNDLE_ID string $IOS_PROFILE_NAME" \
+            -c "Add :compileBitcode bool false" \
+            -c "Add :stripSwiftSymbols bool true" \
+            "$PLIST"
+          if [ "$METHOD" = "app-store-connect" ]; then
+            /usr/libexec/PlistBuddy -c "Add :destination string export" "$PLIST"
+          fi
+
+          xcodebuild -exportArchive \
+            -archivePath "$ARCHIVE" \
+            -exportOptionsPlist "$PLIST" \
+            -exportPath "$RUNNER_TEMP/export-ios"
+          mkdir -p dist
+          IPA=$(find "$RUNNER_TEMP/export-ios" -maxdepth 1 -name '*.ipa' | head -n1)
+          [ -n "$IPA" ] || { echo "::error::No .ipa produced"; exit 1; }
+          cp "$IPA" dist/RawLook.ipa
+          ls -l dist/RawLook.ipa
+
+      - name: Archive and export macOS app
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$MAC_HAS_DEVELOPER_ID" = "true" ]; then
+            METHOD=developer-id
+          elif [[ "$MAC_IDENTITY" == Apple\ Development:* || "$MAC_IDENTITY" == Mac\ Developer:* ]]; then
+            METHOD=debugging
+          else
+            METHOD=mac-application
+          fi
+          echo "macOS export method: $METHOD"
+
+          ARCHIVE="$RUNNER_TEMP/RawLook-macOS.xcarchive"
+          xcodebuild archive \
+            -project "$PROJECT" -scheme "$SCHEME" \
+            -destination 'generic/platform=macOS' \
+            -archivePath "$ARCHIVE" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedDataMac" \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_IDENTITY="$MAC_IDENTITY" \
+            PROVISIONING_PROFILE_SPECIFIER="$MAC_PROFILE_NAME" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH --timestamp"
+
+          PLIST="$RUNNER_TEMP/ExportOptions-macOS.plist"
+          plutil -create xml1 "$PLIST"
+          /usr/libexec/PlistBuddy \
+            -c "Add :method string $METHOD" \
+            -c "Add :teamID string $APPLE_TEAM_ID" \
+            -c "Add :signingStyle string manual" \
+            -c "Add :signingCertificate string $MAC_IDENTITY" \
+            "$PLIST"
+          if [ -n "$MAC_PROFILE_NAME" ]; then
+            /usr/libexec/PlistBuddy \
+              -c "Add :provisioningProfiles dict" \
+              -c "Add :provisioningProfiles:$BUNDLE_ID string $MAC_PROFILE_NAME" \
+              "$PLIST"
+          fi
+
+          xcodebuild -exportArchive \
+            -archivePath "$ARCHIVE" \
+            -exportOptionsPlist "$PLIST" \
+            -exportPath "$RUNNER_TEMP/export-mac"
+          APP="$RUNNER_TEMP/export-mac/$APP_NAME.app"
+          [ -d "$APP" ] || { echo "::error::No .app produced"; exit 1; }
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          echo "MAC_APP=$APP" >> "$GITHUB_ENV"
+
+      - name: Build and sign DMG
+        shell: bash
+        run: |
+          set -euo pipefail
+          STAGE="$RUNNER_TEMP/dmg-root"
+          rm -rf "$STAGE" && mkdir -p "$STAGE" dist
+          ditto "$MAC_APP" "$STAGE/$APP_NAME.app"
+          ln -s /Applications "$STAGE/Applications"
+          hdiutil create -volname "$APP_NAME" -srcfolder "$STAGE" -ov -format UDZO dist/RawLook.dmg
+          codesign --force --sign "$MAC_IDENTITY" --keychain "$KEYCHAIN_PATH" --timestamp dist/RawLook.dmg
+          codesign --verify --verbose=2 dist/RawLook.dmg
+
+      - name: Notarize and staple DMG
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$MAC_HAS_DEVELOPER_ID" != "true" ]; then
+            echo "Skipping notarization: no Developer ID Application certificate."
+            exit 0
+          fi
+          if [ -n "${ASC_KEY_ID:-}" ] && [ -n "${ASC_ISSUER_ID:-}" ] && [ -n "${ASC_KEY_P8_BASE64:-}" ]; then
+            KEY="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"
+            printf '%s' "$ASC_KEY_P8_BASE64" | base64 --decode > "$KEY"
+            xcrun notarytool submit dist/RawLook.dmg --key "$KEY" --key-id "$ASC_KEY_ID" --issuer "$ASC_ISSUER_ID" --wait
+            rm -f "$KEY"
+          elif [ -n "${APPLE_ID:-}" ] && [ -n "${APPLE_APP_SPECIFIC_PASSWORD:-}" ]; then
+            xcrun notarytool submit dist/RawLook.dmg --apple-id "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+          else
+            echo "Skipping notarization: set APPLE_ID + APPLE_APP_SPECIFIC_PASSWORD, or ASC_KEY_ID + ASC_ISSUER_ID + ASC_KEY_P8_BASE64."
+            exit 0
+          fi
+          xcrun stapler staple dist/RawLook.dmg
+          xcrun stapler validate dist/RawLook.dmg
+          spctl --assess --type open --context context:primary-signature --verbose=2 dist/RawLook.dmg || true
+
+      - name: Upload workflow artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: RawLook-${{ github.ref_name }}-${{ github.run_number }}
+          path: |
+            dist/RawLook.ipa
+            dist/RawLook.dmg
+          if-no-files-found: error
+
+      - name: Create or update GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/RawLook.ipa dist/RawLook.dmg --clobber
+          else
+            gh release create "$TAG" dist/RawLook.ipa dist/RawLook.dmg --title "RawLook $TAG" --generate-notes
+          fi
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RawLookTests-xcresult-${{ github.run_number }}
+          path: ${{ runner.temp }}/RawLookTests.xcresult
+          if-no-files-found: ignore
+
+      - name: Clean up keychain and profiles
+        if: always()
+        shell: bash
+        run: |
+          if [ -n "${KEYCHAIN_PATH:-}" ] && [ -f "$KEYCHAIN_PATH" ]; then
+            security delete-keychain "$KEYCHAIN_PATH" || true
+          fi
+          for uuid in "${IOS_PROFILE_UUID:-}" "${MAC_PROFILE_UUID:-}"; do
+            [ -n "$uuid" ] || continue
+            rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/$uuid".* \
+                  "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/$uuid".*
+          done
+          rm -f "$RUNNER_TEMP"/*.p12 "$RUNNER_TEMP"/*.p8 || true
