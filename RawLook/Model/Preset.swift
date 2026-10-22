@@ -3,6 +3,8 @@ import Foundation
 struct Preset: Codable, Sendable, Equatable, Identifiable {
   var schemaId: String
   var schemaVersion: String
+  /// Version of this preset's tuning (optional; older JSON files omit it).
+  var presetVersion: String?
   var profileId: String
   var name: String
   var createdDate: String
@@ -29,6 +31,9 @@ struct Preset: Codable, Sendable, Equatable, Identifiable {
     var globalHslSaturation: Saturation
     var strengthBlendLinearSrgb: Strength
     var extraEffects: [String: Effect]
+    /// Optional preset-owned white-balance offset, relative to each photo's own white balance.
+    /// Older JSON files omit it, which means no shift.
+    var whiteBalanceShift: WhiteBalanceShift?
     struct Sectors: Codable, Sendable, Equatable {
       var enabled: Bool
       var anchors: [Anchor]
@@ -109,9 +114,11 @@ struct Preset: Codable, Sendable, Equatable, Identifiable {
       [
         p.defaultStrength, p.strengthBlendLinearSrgb.defaultStrength,
         p.globalHslSaturation.multiplier,
+        p.whiteBalanceShift?.temperatureShiftMireds ?? 0, p.whiteBalanceShift?.tintShift ?? 0,
         rawDevelopmentContract.rawStageControls.exposureEv.default
       ].allSatisfy(\.isFinite), (0...1).contains(p.defaultStrength),
-      (0...1).contains(p.strengthBlendLinearSrgb.defaultStrength)
+      (0...1).contains(p.strengthBlendLinearSrgb.defaultStrength),
+      p.whiteBalanceShift?.isWithinLimits ?? true
     else { throw PresetError.nonfinite }
     return p.extraEffects.filter { $0.value.enabled }.keys.sorted().map {
       "Unsupported effect enabled: \($0)"

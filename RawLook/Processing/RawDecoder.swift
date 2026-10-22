@@ -82,7 +82,11 @@ extension PhotoRenderer {
     }
     return (temperature, tint)
   }
-  func baseline(_ state: EditState, maxSize: CGFloat?) throws -> CIImage {
+  /// Develop the photo. `shift` is the preset's white-balance offset (already scaled by the
+  /// look strength); it sits on top of the per-photo as-shot or manual white balance.
+  func baseline(_ state: EditState, maxSize: CGFloat?, shift: WhiteBalanceShift = .zero) throws
+    -> CIImage
+  {
     guard let source else { throw RenderError.message("Open a photo first.") }
     var image = source
     if let raw = rawFilter {
@@ -95,6 +99,10 @@ extension PhotoRenderer {
       if state.whiteBalanceMode == .manual {
         raw.neutralTemperature = state.temperature
         raw.neutralTint = state.tint
+      }
+      if !shift.isZero {
+        raw.neutralTemperature = shift.kelvin(from: raw.neutralTemperature)
+        raw.neutralTint = shift.tint(from: raw.neutralTint)
       }
       guard let output = raw.outputImage else {
         throw RenderError.message("RAW development failed for this camera.")
@@ -115,6 +123,17 @@ extension PhotoRenderer {
         image = filter.outputImage ?? image
       }
       if let gains = state.neutralGains {
+        let filter = CIFilter.colorMatrix()
+        filter.inputImage = image
+        filter.rVector = CIVector(x: CGFloat(gains[0]), y: 0, z: 0, w: 0)
+        filter.gVector = CIVector(x: 0, y: CGFloat(gains[1]), z: 0, w: 0)
+        filter.bVector = CIVector(x: 0, y: 0, z: CGFloat(gains[2]), w: 0)
+        image = filter.outputImage ?? image
+      }
+      if !shift.isZero {
+        // Rendered files carry no RAW white point, so shift relative to D65 in linear sRGB
+        // (the same gains the CPU reference LookMath.develop uses).
+        let gains = shift.linearGains()
         let filter = CIFilter.colorMatrix()
         filter.inputImage = image
         filter.rVector = CIVector(x: CGFloat(gains[0]), y: 0, z: 0, w: 0)

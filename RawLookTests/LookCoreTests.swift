@@ -14,12 +14,10 @@ final class LookCoreTests: XCTestCase {
         .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent(
           "Presets/source/warm-garden-portraits.json")
     #else
-      let bundle = Bundle.main
+      // The original v1.0.0 JSON ships in the test bundle; the app bundle has the tuned one.
+      let bundle = Bundle(for: Self.self)
       let url = try XCTUnwrap(
-        bundle.url(
-          forResource: "warm-garden-portraits", withExtension: "json",
-          subdirectory: "Presets/source")
-          ?? bundle.url(forResource: "warm-garden-portraits", withExtension: "json"))
+        bundle.url(forResource: "warm-garden-portraits", withExtension: "json"))
     #endif
     return try Preset.decode(Data(contentsOf: url))
   }

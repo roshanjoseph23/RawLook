@@ -114,4 +114,12 @@ enum LookMath {
     }
     return c.map(clamp)
   }
+
+  /// CPU reference for the whole preset on a rendered image: the preset's white-balance shift
+  /// as linear gains (scaled by strength), then the creative look in encoded sRGB.
+  static func develop(linear input: [Float], pipeline p: Preset.Pipeline, strength: Float) -> [Float] {
+    let gains = (p.whiteBalanceShift ?? .zero).scaled(by: strength).linearGains()
+    let encoded = zip(input, gains).map { encode(max(0, $0 * $1)) }
+    return apply(encoded, pipeline: p, strength: strength)
+  }
 }

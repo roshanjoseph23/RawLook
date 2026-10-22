@@ -24,9 +24,11 @@ targets:
     sources:
       - path: RawLook
         excludes: [RawLook.entitlements, Info.plist]
+      # Bundled presets: every JSON directly in Presets/. Presets/source keeps the user's
+      # original JSONs for reference and is not shipped in the app.
       - path: Presets
-        type: folder
         buildPhase: resources
+        excludes: ["source/**"]
     # Merged with the generated Info.plist (GENERATE_INFOPLIST_FILE). Declares the
     # photo types RawLook can open from Finder "Open With" and the iOS Files app.
     info:
@@ -78,7 +80,11 @@ targets:
   RawLookTests:
     type: bundle.unit-test
     supportedDestinations: [iOS, macOS]
-    sources: [RawLookTests]
+    sources:
+      - RawLookTests
+      # The original v1.0.0 JSON, used by tests that pin its behaviour.
+      - path: Presets/source
+        buildPhase: resources
     dependencies:
       - target: RawLook
     settings:

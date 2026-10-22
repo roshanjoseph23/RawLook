@@ -1,0 +1,1792 @@
+{
+  "schema_id": "reference-photo-look",
+  "schema_version": "1.0.0",
+  "preset_version": "1.1.0",
+  "profile_id": "d-leong-warm-garden-portraits-v1",
+  "name": "Warm Garden Portraits \u2014 reference look",
+  "created_date": "2026-10-22",
+  "intended_use": "Machine-readable reference analysis and an estimated creative look for a custom application developing Fujifilm RAF files.",
+  "status": {
+    "pixel_measurements": "Measured from the four supplied finished JPEGs after decoding to sRGB.",
+    "creative_parameters": "Manually estimated from visual appearance; these are newly designed settings, not recovered original settings.",
+    "validation": "JSON structure and numeric ranges checked. No source RAF or neutral before-image was supplied, so the creative transform has not been matched or validated on RAW photographs.",
+    "match_error": null,
+    "compatibility": "Custom application contract. Not a Lightroom, Capture One, camera recipe, XMP preset, or directly importable vendor preset."
+  },
+  "appearance": {
+    "overall": "Bright, warm environmental portraits with strong color separation and moderate contrast.",
+    "exposure": "Bright clothing and readable faces against considerably darker vegetation and ironwork; overall histogram varies strongly with composition.",
+    "white_balance": "White garments appear neutral to slightly cool, while skin and stone remain warm. Preserve this separation rather than warming the whole image heavily.",
+    "tone": "Deep shadow separation, a subtle raised black endpoint, slightly lifted middle and upper-middle tones, and a gentle highlight shoulder.",
+    "skin": "Warm peach and copper hues. Preserve the subject's actual skin color; do not force all subjects to these reference samples.",
+    "greens": "Rich forest and olive greens, often dark; warmer foliage where lit.",
+    "blues": "Denim leans toward cyan-blue, with visible fabric texture.",
+    "reds": "Distinct red flowers and copper-red hair with strong saturation.",
+    "microcontrast": "Moderately crisp detail with smooth portrait rendering; no obvious heavy clarity or dehaze effect.",
+    "grain": "No reliable intentional grain signature can be separated from JPEG compression and resizing.",
+    "light": "Soft outdoor light with subject/background separation and warmer practical lamps; lighting is part of the look and cannot be recreated by a global preset alone."
+  },
+  "unknown_original_settings": {
+    "camera_make": null,
+    "camera_model": null,
+    "lens": null,
+    "focal_length_mm": null,
+    "aperture_f_number": null,
+    "shutter_seconds": null,
+    "iso": null,
+    "capture_exposure_compensation_ev": null,
+    "edit_exposure_ev": null,
+    "white_balance_temperature_kelvin": null,
+    "white_balance_tint": null,
+    "film_simulation": null,
+    "camera_dynamic_range_mode": null,
+    "original_tone_curves": null,
+    "original_hsl_adjustments": null,
+    "original_color_grading": null,
+    "original_local_masks": null,
+    "original_sharpening": null,
+    "original_noise_reduction": null,
+    "reason": "No EXIF or standard XMP signature was found in the supplied files. Finished image pixels do not uniquely determine capture settings, white balance, tone curves, local edits, or a RAW development profile. The source camera is not known to be Fujifilm."
+  },
+  "raw_development_contract": {
+    "input": "Fujifilm RAF; read camera model, sensor pattern, black/white levels and color metadata from each file.",
+    "sensor_note": "Support the actual Bayer or X-Trans layout reported by the camera; do not assume every RAF is X-Trans.",
+    "baseline": "Use a consistent, documented neutral/default RAW rendering with camera-appropriate color conversion. A change of baseline changes the appearance of this look.",
+    "film_simulation": "No original film simulation can be identified. Do not assume a Fuji film simulation was used. Avoid stacking an unrelated stylized baseline beneath this look.",
+    "recommended_precision": "At least float32 through color and tone operations; avoid 8-bit intermediate processing.",
+    "raw_stage_controls": {
+      "exposure_ev": {
+        "default": 0.0,
+        "scope": "per_image",
+        "formula": "Multiply scene-linear RAW-derived RGB by 2^exposure_ev before the baseline display tone map.",
+        "auto_estimation": "Off by default. Adjust for the new scene and subject; do not match the whole reference histogram blindly."
+      },
+      "white_balance": {
+        "default_mode": "as_shot",
+        "scope": "per_image",
+        "temperature_kelvin": null,
+        "tint": null,
+        "camera_rgb_multipliers": null,
+        "policy": "Start from camera as-shot multipliers, or a user-selected neutral patch. Apply the RAW engine's camera-specific white balance before the creative look.",
+        "reason": "Kelvin/tint and camera RGB multipliers cannot be inferred reliably from these JPEGs and are not transferable without the target camera calibration."
+      },
+      "highlight_reconstruction": {
+        "policy": "Use the RAW engine's supported reconstruction when channels clip; inspect white clothing.",
+        "fixed_recoverable_stops": null
+      },
+      "noise_reduction": {
+        "policy": "Adapt to sensor and ISO; no fixed amount is inferred.",
+        "fixed_amount": null
+      },
+      "demosaic_and_detail": {
+        "policy": "Use camera-appropriate demosaicing; evaluate fine foliage and fabric at 100 percent.",
+        "fixed_sharpening_amount": null
+      },
+      "lens_corrections": {
+        "policy": "Use available camera/lens metadata and the user's preference.",
+        "inferred_from_reference": false
+      }
+    },
+    "handoff_to_creative_pipeline": {
+      "image_state": "Already demosaiced, white-balanced, exposure-adjusted and baseline tone-mapped.",
+      "color_space": "sRGB primaries, D65 white, standard sRGB transfer function",
+      "channel_order": "RGB",
+      "channel_domain": [
+        0.0,
+        1.0
+      ],
+      "important": "The creative curves operate on display-encoded sRGB, not linear sensor RGB, log RGB, Adobe RGB, or ACES. Convert explicitly at the handoff."
+    }
+  },
+  "estimated_creative_pipeline": {
+    "provenance": "v1.1.0 retune by measuring the four reference JPEGs (border-cropped): lifted matte black point, soft highlight roll-off, olive-warm shadows, warm creamy highlights, punchy coral reds, warm muted greens, clean cyan-blue denim. Still an estimate; v1.0.0 kept in Presets/source for reference.",
+    "confidence": "Medium for the broad visual direction; low for exact numeric match on an unseen RAF.",
+    "default_strength": 1.0,
+    "execution_order": [
+      "hsl_sector_adjustments",
+      "master_rgb_tone_curve",
+      "per_channel_tone_curves",
+      "global_hsl_saturation",
+      "strength_blend_linear_srgb",
+      "output_srgb"
+    ],
+    "hsl_sector_adjustments": {
+      "enabled": true,
+      "color_model": "Standard cylindrical HSL calculated from encoded sRGB; hue in degrees, saturation and lightness in [0,1]. This is not HSV.",
+      "interpolation": "Piecewise linear interpolation of each parameter over circular hue. Interpolate from the 300-degree anchor to a duplicate of the 0-degree anchor at 360. Evaluate all sector parameters using the original H, S, L.",
+      "neutral_protection": {
+        "weight_formula": "t=clamp((S-0.03)/(0.18-0.03),0,1); w=t*t*(3-2*t).",
+        "effect": "All sector changes fade to zero on near-neutral pixels."
+      },
+      "application_formulas": {
+        "hue": "H_out = (H + w * interpolated_hue_delta_degrees) modulo 360.",
+        "saturation": "S_out = clamp(S * (1 + w * (interpolated_saturation_multiplier - 1)), 0, 1).",
+        "lightness": "Let d = w * interpolated_lightness_adjustment. L_out = L + d*(1-L) if d>=0, otherwise L_out = L + d*L. Clamp to [0,1].",
+        "conversion": "Convert the adjusted HSL triplet back to encoded sRGB."
+      },
+      "anchors": [
+        {
+          "name": "red",
+          "hue_degrees": 0,
+          "hue_delta_degrees": 1,
+          "saturation_multiplier": 1.2,
+          "lightness_adjustment": 0.0
+        },
+        {
+          "name": "orange",
+          "hue_degrees": 30,
+          "hue_delta_degrees": -2,
+          "saturation_multiplier": 0.92,
+          "lightness_adjustment": 0.06
+        },
+        {
+          "name": "yellow",
+          "hue_degrees": 60,
+          "hue_delta_degrees": -4,
+          "saturation_multiplier": 1.0,
+          "lightness_adjustment": 0.02
+        },
+        {
+          "name": "green",
+          "hue_degrees": 120,
+          "hue_delta_degrees": -14,
+          "saturation_multiplier": 0.8,
+          "lightness_adjustment": 0.0
+        },
+        {
+          "name": "aqua",
+          "hue_degrees": 180,
+          "hue_delta_degrees": 4,
+          "saturation_multiplier": 0.9,
+          "lightness_adjustment": 0.0
+        },
+        {
+          "name": "blue",
+          "hue_degrees": 225,
+          "hue_delta_degrees": -8,
+          "saturation_multiplier": 0.95,
+          "lightness_adjustment": 0.03
+        },
+        {
+          "name": "purple",
+          "hue_degrees": 270,
+          "hue_delta_degrees": 0,
+          "saturation_multiplier": 0.85,
+          "lightness_adjustment": 0.0
+        },
+        {
+          "name": "magenta",
+          "hue_degrees": 315,
+          "hue_delta_degrees": 6,
+          "saturation_multiplier": 0.9,
+          "lightness_adjustment": 0.0
+        }
+      ],
+      "intent": "Favor cyan-blue denim, slightly warmer and darker foliage, and warm skin without globally saturating the frame. The same hue values in unrelated objects will also change."
+    },
+    "master_rgb_tone_curve": {
+      "enabled": true,
+      "input_domain": [
+        0,
+        1
+      ],
+      "output_domain": [
+        0,
+        1
+      ],
+      "space": "Encoded sRGB",
+      "application": "Apply the same scalar curve independently to R, G and B.",
+      "interpolation": "Piecewise linear; clamp outside the tabulated input range to the corresponding endpoint. Use this interpolation for reproducible version-1 rendering.",
+      "points": [
+        [
+          0,
+          0.022
+        ],
+        [
+          0.05,
+          0.06
+        ],
+        [
+          0.15,
+          0.158
+        ],
+        [
+          0.3,
+          0.322
+        ],
+        [
+          0.5,
+          0.545
+        ],
+        [
+          0.7,
+          0.755
+        ],
+        [
+          0.85,
+          0.878
+        ],
+        [
+          0.95,
+          0.94
+        ],
+        [
+          1,
+          0.96
+        ]
+      ],
+      "intent": "Matte lifted black point, soft open shadows, bright airy mids and a soft highlight shoulder below pure white.",
+      "important": "This curve is a forward creative transform for a neutral baseline. It is not the source photographer's recovered curve. Applying it to the finished reference JPEGs would grade them again."
+    },
+    "per_channel_tone_curves": {
+      "enabled": true,
+      "space": "Encoded sRGB after the master curve",
+      "interpolation": "Piecewise linear with endpoint clamping.",
+      "red": [
+        [
+          0,
+          0
+        ],
+        [
+          0.25,
+          0.245
+        ],
+        [
+          0.5,
+          0.51
+        ],
+        [
+          0.75,
+          0.765
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "green": [
+        [
+          0,
+          0.02
+        ],
+        [
+          0.25,
+          0.252
+        ],
+        [
+          0.5,
+          0.5
+        ],
+        [
+          0.75,
+          0.748
+        ],
+        [
+          1,
+          0.99
+        ]
+      ],
+      "blue": [
+        [
+          0,
+          0.0
+        ],
+        [
+          0.25,
+          0.24
+        ],
+        [
+          0.5,
+          0.48
+        ],
+        [
+          0.75,
+          0.745
+        ],
+        [
+          1,
+          0.99
+        ]
+      ],
+      "intent": "Olive-green shadow tint (green lifted, blue held down), warm mids, creamy warm highlights.",
+      "color_grading_note": "This is the executable color-tone adjustment. Do not also apply a second split-toning operation from the descriptive appearance notes."
+    },
+    "global_hsl_saturation": {
+      "enabled": true,
+      "multiplier": 1.02,
+      "formula": "After the RGB curves, convert encoded RGB to standard HSL, set S=clamp(0.98*S,0,1), preserve H and L, and convert back to encoded RGB."
+    },
+    "strength_blend_linear_srgb": {
+      "strength_range": [
+        0,
+        1
+      ],
+      "default_strength": 1.0,
+      "formula": "Decode both original pipeline input and fully graded RGB with the sRGB inverse transfer function; out_linear=(1-strength)*input_linear+strength*graded_linear; encode with the sRGB forward transfer function.",
+      "strength_zero": "Identity relative to the creative-pipeline input; RAW exposure, white balance and baseline rendering remain separate.",
+      "strength_one": "Full estimated creative transform."
+    },
+    "srgb_transfer_functions": {
+      "decode": "linear=c/12.92 when c<=0.04045; otherwise linear=((c+0.055)/1.055)^2.4.",
+      "encode": "c=12.92*linear when linear<=0.0031308; otherwise c=1.055*linear^(1/2.4)-0.055.",
+      "output": "Clamp final output to [0,1] for SDR sRGB export, then quantize only at export."
+    },
+    "extra_effects": {
+      "clarity": {
+        "enabled": false,
+        "reason": "No reliable amount can be separated from optics, lighting and JPEG rendering."
+      },
+      "dehaze": {
+        "enabled": false
+      },
+      "vignette": {
+        "enabled": false
+      },
+      "grain": {
+        "enabled": false
+      },
+      "skin_smoothing": {
+        "enabled": false
+      },
+      "sharpening": {
+        "enabled": false,
+        "reason": "Treat RAW detail and final-size output sharpening separately; no exact radius or amount can be recovered."
+      }
+    },
+    "white_balance_shift": {
+      "temperature_shift_mireds": 10,
+      "tint_shift": 4,
+      "space": "Applied at the RAW stage on top of each photo's own white balance (as shot or the per-photo sliders); positive mireds warm, positive tint adds magenta. Scales with strength. Exposure stays per photo."
+    }
+  },
+  "highlight_and_shadow_design": {
+    "execution": "Already encoded in the master and channel curves; these notes are not additional processing stages.",
+    "black_floor": {
+      "master_curve_input": 0.0,
+      "master_curve_output": 0.01,
+      "intent": "Subtle floor lift rather than a strong faded matte look."
+    },
+    "deep_shadows": {
+      "master_curve_input": 0.1,
+      "master_curve_output": 0.08,
+      "intent": "Retain deep foliage and background ironwork."
+    },
+    "lower_midtones": {
+      "master_curve_input": 0.25,
+      "master_curve_output": 0.23
+    },
+    "midtones": {
+      "master_curve_input": 0.5,
+      "master_curve_output": 0.515
+    },
+    "upper_midtones": {
+      "master_curve_input": 0.75,
+      "master_curve_output": 0.785
+    },
+    "highlight_shoulder": {
+      "last_segment_slope": 0.5333333333,
+      "white_endpoint": 0.985,
+      "intent": "Soften the brightest rendered values while maintaining bright white clothing."
+    },
+    "raw_highlight_recovery": "Separate upstream RAW operation; this display curve cannot restore channels already clipped in the baseline render."
+  },
+  "measurement_contract": {
+    "source_decoder": "macOS ImageIO / CoreGraphics rendered into 8-bit sRGB RGBA; alpha discarded.",
+    "coordinates": "Pixel XY on the full 1440x1800 JPEG, origin at top left. Bounding boxes are [x0,y0,x1,y1], with x1 and y1 exclusive.",
+    "content_bounds": "Images 2-4 have approximately [180,90,1260,1710] photographic bounds. Statistics use a further two-pixel inset to avoid border ringing. Image 1 is measured in full.",
+    "encoded_luma": "Yprime=0.2126*Rprime+0.7152*Gprime+0.0722*Bprime; an encoded luma proxy, not linear luminance or exposure in stops.",
+    "linear_relative_luminance": "Decode sRGB first, then Y=0.2126*R+0.7152*G+0.0722*B. Reference white is 1. This is relative display luminance, not scene exposure or measured cd/m2.",
+    "histograms": {
+      "encoded_luma": "32 equal bins over normalized [0,1]; fractions of all analyzed content pixels.",
+      "hue": "24 equal 15-degree HSV hue bins from 0 through 360; fractions among pixels with HSV saturation>=0.15 and value between 0.08 and 0.98 inclusive."
+    },
+    "clipping": "Fractions refer to decoded JPEG channel codes. JPEG clipping does not establish whether the original RAW sensor clipped.",
+    "material_samples": "Manually chosen rectangular samples of visible materials, not calibrated color targets. Median RGB is per channel; median HSV is computed per component over the sampled pixels. Hue at low saturation is unstable.",
+    "weighting": "No global aggregate is imposed: reference 1 and reference 2 show substantially the same pose/composition at different crops and are not independent evidence of a second look.",
+    "no_blind_histogram_matching": "Content statistics vary with subject area and background. Applying these global distributions to every new RAF would distort unrelated scenes."
+  },
+  "measured_reference_analysis": [
+    {
+      "id": "reference_1",
+      "filename": "d.leong_feed_20240429200419-1.JPG",
+      "canvas_size_px": [
+        1440,
+        1800
+      ],
+      "content_bbox_xyxy_px_estimate": [
+        0,
+        0,
+        1440,
+        1800
+      ],
+      "analysis_bbox_xyxy_px": [
+        0,
+        0,
+        1440,
+        1800
+      ],
+      "border_area_fraction_estimate": 0.0,
+      "embedded_metadata": {
+        "{IPTC}": {
+          "SpecialInstructions": "FBMD2300096a0100001eb40000b3ea0000e524010042440200f3000300a44c0300cf5204009dfb0400747e0500"
+        },
+        "{JFIF}": {
+          "DensityUnit": 0,
+          "IsProgressive": true,
+          "JFIFVersion": [
+            1,
+            0,
+            1
+          ],
+          "XDensity": 1,
+          "YDensity": 1
+        },
+        "ColorModel": "RGB",
+        "Depth": 8,
+        "PixelHeight": 1800,
+        "PixelWidth": 1440,
+        "ProfileName": "sRGB IEC61966-2.1"
+      },
+      "measurements": {
+        "pixel_count": 2592000,
+        "mean_rgb_srgb_0_255": [
+          146.459,
+          136.469,
+          125.784
+        ],
+        "median_rgb_srgb_0_255": [
+          168.0,
+          148.0,
+          137.0
+        ],
+        "rgb_srgb_0_255_percentiles": {
+          "R": {
+            "0": 0.0,
+            "0.1": 0.0,
+            "1": 9.0,
+            "5": 17.0,
+            "10": 25.0,
+            "25": 75.0,
+            "50": 168.0,
+            "75": 219.0,
+            "90": 230.0,
+            "95": 235.0,
+            "99": 244.0,
+            "99.9": 255.0,
+            "100": 255.0
+          },
+          "G": {
+            "0": 0.0,
+            "0.1": 0.0,
+            "1": 13.0,
+            "5": 20.0,
+            "10": 28.0,
+            "25": 73.0,
+            "50": 148.0,
+            "75": 200.0,
+            "90": 223.0,
+            "95": 229.0,
+            "99": 240.0,
+            "99.9": 250.0,
+            "100": 255.0
+          },
+          "B": {
+            "0": 0.0,
+            "0.1": 0.0,
+            "1": 7.0,
+            "5": 13.0,
+            "10": 19.0,
+            "25": 48.0,
+            "50": 137.0,
+            "75": 197.0,
+            "90": 223.0,
+            "95": 229.0,
+            "99": 242.0,
+            "99.9": 254.0,
+            "100": 255.0
+          }
+        },
+        "encoded_luma_0_255_percentiles": {
+          "0": 0.0,
+          "0.1": 9.3582,
+          "1": 13.2964,
+          "5": 19.8556,
+          "10": 28.4488,
+          "25": 73.2996,
+          "50": 148.3836,
+          "75": 202.4412,
+          "90": 223.9226,
+          "95": 229.9226,
+          "99": 240.7742,
+          "99.9": 250.0562,
+          "100": 255.0
+        },
+        "linear_relative_luminance_0_1_percentiles": {
+          "0": 0.0,
+          "0.1": 0.0028,
+          "1": 0.0042,
+          "5": 0.007,
+          "10": 0.0122,
+          "25": 0.0749,
+          "50": 0.3054,
+          "75": 0.5955,
+          "90": 0.7449,
+          "95": 0.7908,
+          "99": 0.8779,
+          "99.9": 0.9567,
+          "100": 1.0
+        },
+        "mean_linear_relative_luminance": 0.349613,
+        "encoded_luma_histogram_32_bins_fraction": [
+          0.000491,
+          0.024048,
+          0.051904,
+          0.038709,
+          0.030066,
+          0.027198,
+          0.024911,
+          0.024157,
+          0.023786,
+          0.023828,
+          0.023756,
+          0.024613,
+          0.02502,
+          0.026284,
+          0.027631,
+          0.029336,
+          0.029554,
+          0.028648,
+          0.025338,
+          0.023629,
+          0.023837,
+          0.025864,
+          0.036769,
+          0.0528,
+          0.055101,
+          0.0569,
+          0.052943,
+          0.056075,
+          0.062807,
+          0.030068,
+          0.012255,
+          0.001672
+        ],
+        "hsv_saturation_percentiles": {
+          "0": 0.0,
+          "0.1": 0.0,
+          "1": 0.0083,
+          "5": 0.021,
+          "10": 0.0273,
+          "25": 0.0876,
+          "50": 0.2252,
+          "75": 0.45,
+          "90": 0.6053,
+          "95": 0.6986,
+          "99": 0.9429,
+          "99.9": 1.0,
+          "100": 1.0
+        },
+        "hue_histogram_24_bins_fraction_of_eligible_pixels": [
+          0.086291,
+          0.372098,
+          0.077093,
+          0.04534,
+          0.053218,
+          0.037095,
+          0.046501,
+          0.033873,
+          0.022581,
+          0.006006,
+          0.004684,
+          0.005073,
+          0.025633,
+          0.150645,
+          0.016382,
+          0.000472,
+          0.000306,
+          0.000195,
+          0.000193,
+          0.000225,
+          0.000241,
+          0.00026,
+          0.000828,
+          0.014767
+        ],
+        "hue_histogram_eligible_fraction": 0.582132,
+        "clipping_fraction": {
+          "any_channel_eq_0": 0.005069,
+          "all_channels_eq_0": 1e-06,
+          "any_channel_eq_255": 0.002216,
+          "all_channels_eq_255": 6e-06,
+          "all_channels_le_5": 5.7e-05,
+          "all_channels_ge_250": 0.000506
+        },
+        "tonal_zones": {
+          "shadows_Y_lt_0.05": {
+            "fraction": 0.209054,
+            "mean_rgb_srgb_0_255": [
+              30.65,
+              33.518,
+              24.083
+            ]
+          },
+          "midtones_Y_0.05_to_0.5": {
+            "fraction": 0.431719,
+            "mean_rgb_srgb_0_255": [
+              139.649,
+              124.653,
+              107.813
+            ]
+          },
+          "highlights_Y_ge_0.5": {
+            "fraction": 0.359227,
+            "mean_rgb_srgb_0_255": [
+              222.039,
+              210.582,
+              206.569
+            ]
+          }
+        }
+      },
+      "material_samples": {
+        "face_cheek": {
+          "bbox_xyxy_px": [
+            735,
+            394,
+            750,
+            410
+          ],
+          "median_rgb_srgb_0_255": [
+            224.0,
+            165.0,
+            134.0
+          ],
+          "median_hsv": {
+            "h_degrees": 21.38,
+            "s": 0.4036,
+            "v": 0.8784
+          }
+        },
+        "denim": {
+          "bbox_xyxy_px": [
+            735,
+            626,
+            791,
+            714
+          ],
+          "median_rgb_srgb_0_255": [
+            146.0,
+            186.0,
+            202.0
+          ],
+          "median_hsv": {
+            "h_degrees": 198.21,
+            "s": 0.2806,
+            "v": 0.7922
+          }
+        },
+        "white_cap": {
+          "bbox_xyxy_px": [
+            720,
+            280,
+            763,
+            300
+          ],
+          "median_rgb_srgb_0_255": [
+            227.0,
+            232.0,
+            238.0
+          ],
+          "median_hsv": {
+            "h_degrees": 206.67,
+            "s": 0.0381,
+            "v": 0.9333
+          }
+        },
+        "foliage": {
+          "bbox_xyxy_px": [
+            110,
+            120,
+            200,
+            240
+          ],
+          "median_rgb_srgb_0_255": [
+            19.0,
+            31.0,
+            17.0
+          ],
+          "median_hsv": {
+            "h_degrees": 110.0,
+            "s": 0.425,
+            "v": 0.1216
+          }
+        },
+        "warm_stone": {
+          "bbox_xyxy_px": [
+            1095,
+            700,
+            1150,
+            910
+          ],
+          "median_rgb_srgb_0_255": [
+            227.0,
+            184.0,
+            160.0
+          ],
+          "median_hsv": {
+            "h_degrees": 21.74,
+            "s": 0.2883,
+            "v": 0.8902
+          }
+        }
+      },
+      "sha256": "ca9f092dc6160dba68ecaf3ce52d6aeaebe1ca7a8e394bbb725a12092125bda2",
+      "file_size_bytes": 283345,
+      "metadata_marker_checks": {
+        "exif_signature_present": false,
+        "standard_xmp_signature_present": false
+      }
+    },
+    {
+      "id": "reference_2",
+      "filename": "d.leong_feed_20240429200419-2.JPG",
+      "canvas_size_px": [
+        1440,
+        1800
+      ],
+      "content_bbox_xyxy_px_estimate": [
+        180,
+        90,
+        1260,
+        1710
+      ],
+      "analysis_bbox_xyxy_px": [
+        182,
+        92,
+        1258,
+        1708
+      ],
+      "border_area_fraction_estimate": 0.325,
+      "embedded_metadata": {
+        "{IPTC}": {
+          "SpecialInstructions": "FBMD2300096a0100004292000041bd0000cbe9000069d70100225d0200eba10200185003009fbf030089160400"
+        },
+        "{JFIF}": {
+          "DensityUnit": 0,
+          "IsProgressive": true,
+          "JFIFVersion": [
+            1,
+            0,
+            1
+          ],
+          "XDensity": 1,
+          "YDensity": 1
+        },
+        "ColorModel": "RGB",
+        "Depth": 8,
+        "PixelHeight": 1800,
+        "PixelWidth": 1440,
+        "ProfileName": "sRGB IEC61966-2.1"
+      },
+      "measurements": {
+        "pixel_count": 1738816,
+        "mean_rgb_srgb_0_255": [
+          150.125,
+          139.812,
+          126.979
+        ],
+        "median_rgb_srgb_0_255": [
+          173.0,
+          153.0,
+          138.0
+        ],
+        "rgb_srgb_0_255_percentiles": {
+          "R": {
+            "0": 0.0,
+            "0.1": 0.0,
+            "1": 8.0,
+            "5": 17.0,
+            "10": 26.0,
+            "25": 80.0,
+            "50": 173.0,
+            "75": 222.0,
+            "90": 231.0,
+            "95": 235.0,
+            "99": 243.0,
+            "99.9": 255.0,
+            "100": 255.0
+          },
+          "G": {
+            "0": 0.0,
+            "0.1": 1.0,
+            "1": 14.0,
+            "5": 21.0,
+            "10": 31.0,
+            "25": 77.0,
+            "50": 153.0,
+            "75": 202.0,
+            "90": 225.0,
+            "95": 229.0,
+            "99": 240.0,
+            "99.9": 250.0,
+            "100": 255.0
+          },
+          "B": {
+            "0": 0.0,
+            "0.1": 0.0,
+            "1": 4.0,
+            "5": 13.0,
+            "10": 19.0,
+            "25": 50.0,
+            "50": 138.0,
+            "75": 198.0,
+            "90": 225.0,
+            "95": 230.0,
+            "99": 242.0,
+            "99.9": 253.0,
+            "100": 255.0
+          }
+        },
+        "encoded_luma_0_255_percentiles": {
+          "0": 0.0,
+          "0.1": 8.8556,
+          "1": 13.6482,
+          "5": 20.8556,
+          "10": 30.8556,
+          "25": 77.4996,
+          "50": 153.7386,
+          "75": 205.656,
+          "90": 225.4842,
+          "95": 230.0682,
+          "99": 240.1444,
+          "99.9": 249.4231,
+          "100": 255.0
+        },
+        "linear_relative_luminance_0_1_percentiles": {
+          "0": 0.0,
+          "0.1": 0.0027,
+          "1": 0.0043,
+          "5": 0.0076,
+          "10": 0.0141,
+          "25": 0.0826,
+          "50": 0.329,
+          "75": 0.6172,
+          "90": 0.7567,
+          "95": 0.7921,
+          "99": 0.8726,
+          "99.9": 0.9517,
+          "100": 1.0
+        },
+        "mean_linear_relative_luminance": 0.362785,
+        "encoded_luma_histogram_32_bins_fraction": [
+          0.000693,
+          0.020259,
+          0.046811,
+          0.036466,
+          0.029198,
+          0.026978,
+          0.025024,
+          0.023836,
+          0.023768,
+          0.02345,
+          0.023485,
+          0.023722,
+          0.023768,
+          0.025213,
+          0.027629,
+          0.029993,
+          0.030302,
+          0.027767,
+          0.02485,
+          0.022899,
+          0.023338,
+          0.025332,
+          0.035357,
+          0.049012,
+          0.052965,
+          0.061047,
+          0.055636,
+          0.055046,
+          0.083308,
+          0.03037,
+          0.010803,
+          0.001677
+        ],
+        "hsv_saturation_percentiles": {
+          "0": 0.0,
+          "0.1": 0.0,
+          "1": 0.0086,
+          "5": 0.0178,
+          "10": 0.0255,
+          "25": 0.0905,
+          "50": 0.2348,
+          "75": 0.4545,
+          "90": 0.61,
+          "95": 0.7097,
+          "99": 0.9543,
+          "99.9": 1.0,
+          "100": 1.0
+        },
+        "hue_histogram_24_bins_fraction_of_eligible_pixels": [
+          0.078004,
+          0.353273,
+          0.10968,
+          0.056539,
+          0.060772,
+          0.037978,
+          0.047918,
+          0.041637,
+          0.027833,
+          0.006265,
+          0.00378,
+          0.004524,
+          0.022602,
+          0.121968,
+          0.012721,
+          0.000523,
+          0.000224,
+          0.000134,
+          0.000171,
+          0.000132,
+          0.000163,
+          0.000203,
+          0.000753,
+          0.012202
+        ],
+        "hue_histogram_eligible_fraction": 0.598118,
+        "clipping_fraction": {
+          "any_channel_eq_0": 0.006552,
+          "all_channels_eq_0": 1e-06,
+          "any_channel_eq_255": 0.002245,
+          "all_channels_eq_255": 7e-06,
+          "all_channels_le_5": 0.000108,
+          "all_channels_ge_250": 0.000377
+        },
+        "tonal_zones": {
+          "shadows_Y_lt_0.05": {
+            "fraction": 0.1983,
+            "mean_rgb_srgb_0_255": [
+              30.899,
+              34.617,
+              23.296
+            ]
+          },
+          "midtones_Y_0.05_to_0.5": {
+            "fraction": 0.421612,
+            "mean_rgb_srgb_0_255": [
+              140.055,
+              124.788,
+              104.584
+            ]
+          },
+          "highlights_Y_ge_0.5": {
+            "fraction": 0.380088,
+            "mean_rgb_srgb_0_255": [
+              223.498,
+              211.36,
+              205.914
+            ]
+          }
+        }
+      },
+      "material_samples": {
+        "face_cheek": {
+          "bbox_xyxy_px": [
+            738,
+            590,
+            751,
+            602
+          ],
+          "median_rgb_srgb_0_255": [
+            201.0,
+            133.0,
+            92.0
+          ],
+          "median_hsv": {
+            "h_degrees": 22.93,
+            "s": 0.545,
+            "v": 0.7882
+          }
+        },
+        "denim": {
+          "bbox_xyxy_px": [
+            735,
+            740,
+            782,
+            820
+          ],
+          "median_rgb_srgb_0_255": [
+            149.0,
+            187.0,
+            204.0
+          ],
+          "median_hsv": {
+            "h_degrees": 198.31,
+            "s": 0.2718,
+            "v": 0.8
+          }
+        },
+        "white_cap": {
+          "bbox_xyxy_px": [
+            727,
+            503,
+            755,
+            517
+          ],
+          "median_rgb_srgb_0_255": [
+            227.0,
+            232.0,
+            238.0
+          ],
+          "median_hsv": {
+            "h_degrees": 206.67,
+            "s": 0.0451,
+            "v": 0.9333
+          }
+        },
+        "foliage": {
+          "bbox_xyxy_px": [
+            215,
+            200,
+            300,
+            360
+          ],
+          "median_rgb_srgb_0_255": [
+            26.0,
+            38.0,
+            22.0
+          ],
+          "median_hsv": {
+            "h_degrees": 105.88,
+            "s": 0.3864,
+            "v": 0.149
+          }
+        },
+        "warm_stone": {
+          "bbox_xyxy_px": [
+            995,
+            690,
+            1040,
+            850
+          ],
+          "median_rgb_srgb_0_255": [
+            228.0,
+            185.0,
+            157.0
+          ],
+          "median_hsv": {
+            "h_degrees": 23.28,
+            "s": 0.3142,
+            "v": 0.8941
+          }
+        }
+      },
+      "sha256": "9f145a588efb1589842bfca058c7b1124541c0a54cb0c21ccf1a0e942bcfbeca",
+      "file_size_bytes": 217114,
+      "metadata_marker_checks": {
+        "exif_signature_present": false,
+        "standard_xmp_signature_present": false
+      }
+    },
+    {
+      "id": "reference_3",
+      "filename": "d.leong_feed_20240429200419-3.JPG",
+      "canvas_size_px": [
+        1440,
+        1800
+      ],
+      "content_bbox_xyxy_px_estimate": [
+        180,
+        90,
+        1260,
+        1710
+      ],
+      "analysis_bbox_xyxy_px": [
+        182,
+        92,
+        1258,
+        1708
+      ],
+      "border_area_fraction_estimate": 0.325,
+      "embedded_metadata": {
+        "{IPTC}": {
+          "SpecialInstructions": "FBMD2300096a0100001c960000d6c200003cf2000092b2010015370200f0610200950e0300dd6e0300fdb30300"
+        },
+        "{JFIF}": {
+          "DensityUnit": 0,
+          "IsProgressive": true,
+          "JFIFVersion": [
+            1,
+            0,
+            1
+          ],
+          "XDensity": 1,
+          "YDensity": 1
+        },
+        "ColorModel": "RGB",
+        "Depth": 8,
+        "PixelHeight": 1800,
+        "PixelWidth": 1440,
+        "ProfileName": "sRGB IEC61966-2.1"
+      },
+      "measurements": {
+        "pixel_count": 1738816,
+        "mean_rgb_srgb_0_255": [
+          121.233,
+          118.291,
+          106.031
+        ],
+        "median_rgb_srgb_0_255": [
+          119.0,
+          122.0,
+          101.0
+        ],
+        "rgb_srgb_0_255_percentiles": {
+          "R": {
+            "0": 0.0,
+            "0.1": 0.0,
+            "1": 6.0,
+            "5": 15.0,
+            "10": 22.0,
+            "25": 49.0,
+            "50": 119.0,
+            "75": 196.0,
+            "90": 217.0,
+            "95": 224.0,
+            "99": 235.0,
+            "99.9": 254.0,
+            "100": 255.0
+          },
+          "G": {
+            "0": 0.0,
+            "0.1": 1.0,
+            "1": 12.0,
+            "5": 19.0,
+            "10": 27.0,
+            "25": 55.0,
+            "50": 122.0,
+            "75": 178.0,
+            "90": 205.0,
+            "95": 216.0,
+            "99": 228.0,
+            "99.9": 249.0,
+            "100": 255.0
+          },
+          "B": {
+            "0": 0.0,
+            "0.1": 0.0,
+            "1": 5.0,
+            "5": 11.0,
+            "10": 15.0,
+            "25": 30.0,
+            "50": 101.0,
+            "75": 178.0,
+            "90": 206.0,
+            "95": 216.0,
+            "99": 230.0,
+            "99.9": 248.0,
+            "100": 255.0
+          }
+        },
+        "encoded_luma_0_255_percentiles": {
+          "0": 0.0,
+          "0.1": 9.3582,
+          "1": 13.0798,
+          "5": 20.0064,
+          "10": 27.564,
+          "25": 54.0904,
+          "50": 118.0798,
+          "75": 179.6836,
+          "90": 207.0378,
+          "95": 216.942,
+          "99": 228.8842,
+          "99.9": 248.6298,
+          "100": 255.0
+        },
+        "linear_relative_luminance_0_1_percentiles": {
+          "0": 0.0,
+          "0.1": 0.0028,
+          "1": 0.0041,
+          "5": 0.0072,
+          "10": 0.012,
+          "25": 0.0417,
+          "50": 0.1912,
+          "75": 0.4578,
+          "90": 0.6247,
+          "95": 0.6941,
+          "99": 0.783,
+          "99.9": 0.9443,
+          "100": 1.0
+        },
+        "mean_linear_relative_luminance": 0.263812,
+        "encoded_luma_histogram_32_bins_fraction": [
+          0.000405,
+          0.024262,
+          0.050925,
+          0.052318,
+          0.047121,
+          0.043784,
+          0.039114,
+          0.037313,
+          0.036048,
+          0.034526,
+          0.031706,
+          0.029335,
+          0.027557,
+          0.025678,
+          0.024186,
+          0.023048,
+          0.023515,
+          0.024846,
+          0.02693,
+          0.030493,
+          0.03626,
+          0.047629,
+          0.059874,
+          0.050675,
+          0.039871,
+          0.033386,
+          0.041228,
+          0.03357,
+          0.016986,
+          0.004406,
+          0.001812,
+          0.001193
+        ],
+        "hsv_saturation_percentiles": {
+          "0": 0.0,
+          "0.1": 0.0,
+          "1": 0.0138,
+          "5": 0.0278,
+          "10": 0.0553,
+          "25": 0.1436,
+          "50": 0.3619,
+          "75": 0.5616,
+          "90": 0.7257,
+          "95": 0.8281,
+          "99": 0.9827,
+          "99.9": 1.0,
+          "100": 1.0
+        },
+        "hue_histogram_24_bins_fraction_of_eligible_pixels": [
+          0.121274,
+          0.228362,
+          0.065351,
+          0.040857,
+          0.077023,
+          0.08322,
+          0.088914,
+          0.040797,
+          0.016321,
+          0.010914,
+          0.008023,
+          0.002092,
+          0.008364,
+          0.166238,
+          0.004548,
+          0.000345,
+          0.000326,
+          0.000319,
+          0.000348,
+          0.000193,
+          0.00031,
+          0.000495,
+          0.001103,
+          0.034262
+        ],
+        "hue_histogram_eligible_fraction": 0.704279,
+        "clipping_fraction": {
+          "any_channel_eq_0": 0.008279,
+          "all_channels_eq_0": 1e-06,
+          "any_channel_eq_255": 0.001219,
+          "all_channels_eq_255": 1e-06,
+          "all_channels_le_5": 2.4e-05,
+          "all_channels_ge_250": 0.000228
+        },
+        "tonal_zones": {
+          "shadows_Y_lt_0.05": {
+            "fraction": 0.276149,
+            "mean_rgb_srgb_0_255": [
+              36.442,
+              35.359,
+              22.484
+            ]
+          },
+          "midtones_Y_0.05_to_0.5": {
+            "fraction": 0.525084,
+            "mean_rgb_srgb_0_255": [
+              130.271,
+              128.89,
+              113.281
+            ]
+          },
+          "highlights_Y_ge_0.5": {
+            "fraction": 0.198766,
+            "mean_rgb_srgb_0_255": [
+              215.157,
+              205.512,
+              202.951
+            ]
+          }
+        }
+      },
+      "material_samples": {
+        "forehead": {
+          "bbox_xyxy_px": [
+            667,
+            779,
+            708,
+            795
+          ],
+          "median_rgb_srgb_0_255": [
+            229.0,
+            192.0,
+            175.0
+          ],
+          "median_hsv": {
+            "h_degrees": 19.64,
+            "s": 0.2391,
+            "v": 0.898
+          }
+        },
+        "denim": {
+          "bbox_xyxy_px": [
+            790,
+            1120,
+            850,
+            1220
+          ],
+          "median_rgb_srgb_0_255": [
+            130.0,
+            177.0,
+            199.0
+          ],
+          "median_hsv": {
+            "h_degrees": 198.21,
+            "s": 0.3462,
+            "v": 0.7804
+          }
+        },
+        "white_stone": {
+          "bbox_xyxy_px": [
+            270,
+            850,
+            340,
+            920
+          ],
+          "median_rgb_srgb_0_255": [
+            214.0,
+            207.0,
+            206.0
+          ],
+          "median_hsv": {
+            "h_degrees": 19.2,
+            "s": 0.0507,
+            "v": 0.8392
+          }
+        },
+        "foliage": {
+          "bbox_xyxy_px": [
+            540,
+            90,
+            630,
+            190
+          ],
+          "median_rgb_srgb_0_255": [
+            41.0,
+            62.0,
+            25.0
+          ],
+          "median_hsv": {
+            "h_degrees": 91.58,
+            "s": 0.5442,
+            "v": 0.2431
+          }
+        }
+      },
+      "sha256": "2d6aca91f732bca6133b72aa9f283da5d8d902ce3f0ffb4c2467955dde3bc8a0",
+      "file_size_bytes": 200343,
+      "metadata_marker_checks": {
+        "exif_signature_present": false,
+        "standard_xmp_signature_present": false
+      }
+    },
+    {
+      "id": "reference_4",
+      "filename": "d.leong_feed_20240429200419-4.JPG",
+      "canvas_size_px": [
+        1440,
+        1800
+      ],
+      "content_bbox_xyxy_px_estimate": [
+        180,
+        90,
+        1260,
+        1710
+      ],
+      "analysis_bbox_xyxy_px": [
+        182,
+        92,
+        1258,
+        1708
+      ],
+      "border_area_fraction_estimate": 0.325,
+      "embedded_metadata": {
+        "{IPTC}": {
+          "SpecialInstructions": "FBMD2300096a010000c29e0000a5d80000560e010040f20100d585020084b2020087620300c3db0300d71c0400"
+        },
+        "{JFIF}": {
+          "DensityUnit": 0,
+          "IsProgressive": true,
+          "JFIFVersion": [
+            1,
+            0,
+            1
+          ],
+          "XDensity": 1,
+          "YDensity": 1
+        },
+        "ColorModel": "RGB",
+        "Depth": 8,
+        "PixelHeight": 1800,
+        "PixelWidth": 1440,
+        "ProfileName": "sRGB IEC61966-2.1"
+      },
+      "measurements": {
+        "pixel_count": 1738816,
+        "mean_rgb_srgb_0_255": [
+          130.716,
+          124.651,
+          99.293
+        ],
+        "median_rgb_srgb_0_255": [
+          132.0,
+          125.0,
+          82.0
+        ],
+        "rgb_srgb_0_255_percentiles": {
+          "R": {
+            "0": 0.0,
+            "0.1": 0.0,
+            "1": 7.0,
+            "5": 22.0,
+            "10": 34.0,
+            "25": 70.0,
+            "50": 132.0,
+            "75": 191.0,
+            "90": 228.0,
+            "95": 238.0,
+            "99": 248.0,
+            "99.9": 255.0,
+            "100": 255.0
+          },
+          "G": {
+            "0": 0.0,
+            "0.1": 8.0,
+            "1": 16.0,
+            "5": 27.0,
+            "10": 38.0,
+            "25": 73.0,
+            "50": 125.0,
+            "75": 174.0,
+            "90": 212.0,
+            "95": 229.0,
+            "99": 244.0,
+            "99.9": 251.0,
+            "100": 255.0
+          },
+          "B": {
+            "0": 0.0,
+            "0.1": 0.0,
+            "1": 8.0,
+            "5": 17.0,
+            "10": 22.0,
+            "25": 41.0,
+            "50": 82.0,
+            "75": 151.0,
+            "90": 210.0,
+            "95": 229.0,
+            "99": 245.0,
+            "99.9": 251.0,
+            "100": 255.0
+          }
+        },
+        "encoded_luma_0_255_percentiles": {
+          "0": 0.5736,
+          "0.1": 10.604,
+          "1": 17.0024,
+          "5": 27.466,
+          "10": 38.2342,
+          "25": 71.958,
+          "50": 123.0102,
+          "75": 172.9826,
+          "90": 212.8922,
+          "95": 229.3266,
+          "99": 244.408,
+          "99.9": 251.0,
+          "100": 255.0
+        },
+        "linear_relative_luminance_0_1_percentiles": {
+          "0": 0.0002,
+          "0.1": 0.0033,
+          "1": 0.0058,
+          "5": 0.0118,
+          "10": 0.0209,
+          "25": 0.0698,
+          "50": 0.2074,
+          "75": 0.426,
+          "90": 0.6659,
+          "95": 0.7868,
+          "99": 0.9083,
+          "99.9": 0.9647,
+          "100": 1.0
+        },
+        "mean_linear_relative_luminance": 0.277186,
+        "encoded_luma_histogram_32_bins_fraction": [
+          0.000281,
+          0.007484,
+          0.025799,
+          0.037146,
+          0.036218,
+          0.034172,
+          0.034575,
+          0.035817,
+          0.037404,
+          0.038254,
+          0.038675,
+          0.039057,
+          0.039802,
+          0.039931,
+          0.038604,
+          0.038652,
+          0.039852,
+          0.040748,
+          0.041334,
+          0.040277,
+          0.039106,
+          0.037439,
+          0.034273,
+          0.030917,
+          0.027354,
+          0.02627,
+          0.02925,
+          0.024319,
+          0.021489,
+          0.022642,
+          0.017705,
+          0.005153
+        ],
+        "hsv_saturation_percentiles": {
+          "0": 0.0,
+          "0.1": 0.0,
+          "1": 0.0,
+          "5": 0.0175,
+          "10": 0.0524,
+          "25": 0.2078,
+          "50": 0.401,
+          "75": 0.5581,
+          "90": 0.7031,
+          "95": 0.803,
+          "99": 0.9613,
+          "99.9": 1.0,
+          "100": 1.0
+        },
+        "hue_histogram_24_bins_fraction_of_eligible_pixels": [
+          0.092541,
+          0.149561,
+          0.103598,
+          0.160778,
+          0.155346,
+          0.095247,
+          0.059562,
+          0.022765,
+          0.010653,
+          0.003617,
+          0.000917,
+          0.000531,
+          0.009679,
+          0.098172,
+          0.004639,
+          8.4e-05,
+          9.2e-05,
+          0.000135,
+          0.000604,
+          0.003353,
+          0.004868,
+          0.003448,
+          0.002875,
+          0.016934
+        ],
+        "hue_histogram_eligible_fraction": 0.793364,
+        "clipping_fraction": {
+          "any_channel_eq_0": 0.005775,
+          "all_channels_eq_0": 0.0,
+          "any_channel_eq_255": 0.002765,
+          "all_channels_eq_255": 1.7e-05,
+          "all_channels_le_5": 9e-06,
+          "all_channels_ge_250": 0.001393
+        },
+        "tonal_zones": {
+          "shadows_Y_lt_0.05": {
+            "fraction": 0.198083,
+            "mean_rgb_srgb_0_255": [
+              39.733,
+              38.874,
+              28.436
+            ]
+          },
+          "midtones_Y_0.05_to_0.5": {
+            "fraction": 0.608989,
+            "mean_rgb_srgb_0_255": [
+              130.945,
+              124.237,
+              89.842
+            ]
+          },
+          "highlights_Y_ge_0.5": {
+            "fraction": 0.192928,
+            "mean_rgb_srgb_0_255": [
+              223.407,
+              214.023,
+              201.878
+            ]
+          }
+        }
+      },
+      "material_samples": {
+        "forehead": {
+          "bbox_xyxy_px": [
+            670,
+            807,
+            710,
+            822
+          ],
+          "median_rgb_srgb_0_255": [
+            229.0,
+            197.0,
+            182.0
+          ],
+          "median_hsv": {
+            "h_degrees": 17.65,
+            "s": 0.2096,
+            "v": 0.898
+          }
+        },
+        "denim": {
+          "bbox_xyxy_px": [
+            990,
+            1190,
+            1040,
+            1290
+          ],
+          "median_rgb_srgb_0_255": [
+            92.0,
+            137.0,
+            162.0
+          ],
+          "median_hsv": {
+            "h_degrees": 197.76,
+            "s": 0.4402,
+            "v": 0.6353
+          }
+        },
+        "white_blouse": {
+          "bbox_xyxy_px": [
+            600,
+            1240,
+            650,
+            1310
+          ],
+          "median_rgb_srgb_0_255": [
+            240.0,
+            240.0,
+            242.0
+          ],
+          "median_hsv": {
+            "h_degrees": 240.0,
+            "s": 0.0083,
+            "v": 0.949
+          }
+        },
+        "foliage": {
+          "bbox_xyxy_px": [
+            200,
+            420,
+            285,
+            520
+          ],
+          "median_rgb_srgb_0_255": [
+            42.0,
+            57.0,
+            31.0
+          ],
+          "median_hsv": {
+            "h_degrees": 99.51,
+            "s": 0.4467,
+            "v": 0.2275
+          }
+        }
+      },
+      "sha256": "efba37d417e10ffdeb13e3e1949ea4085e29b1845d649097a304f49d86f4467b",
+      "file_size_bytes": 221833,
+      "metadata_marker_checks": {
+        "exif_signature_present": false,
+        "standard_xmp_signature_present": false
+      }
+    }
+  ],
+  "reference_variations": [
+    {
+      "reference_id": "reference_1",
+      "description": "Tighter full-length crop; most useful for warm stone, cyan denim and deep ironwork. No white canvas border."
+    },
+    {
+      "reference_id": "reference_2",
+      "description": "Wider full-length presentation with white border. Similar garment colors to reference 1; framing accounts for much of the histogram difference."
+    },
+    {
+      "reference_id": "reference_3",
+      "description": "Closer portrait with a larger share of dark foliage; lower image-wide median brightness should not be interpreted as a known negative exposure adjustment."
+    },
+    {
+      "reference_id": "reference_4",
+      "description": "More open greenery, bright white blouse and a darker denim drape. Warm/cool contrast is visible without a heavy global warm white balance."
+    }
+  ],
+  "presentation": {
+    "apply_border_by_default": false,
+    "optional_reference_border": {
+      "canvas_aspect_ratio": [
+        4,
+        5
+      ],
+      "photograph_aspect_ratio": [
+        2,
+        3
+      ],
+      "canvas_rgb_srgb_0_255": [
+        255,
+        255,
+        255
+      ],
+      "photograph_rect_normalized_xyxy": [
+        0.125,
+        0.05,
+        0.875,
+        0.95
+      ],
+      "scope": "Presentation only, after image processing and resizing. Do not include the border in exposure/color analysis."
+    },
+    "color_managed_export": "Embed an sRGB ICC profile for standard SDR JPEG/PNG export; preserve higher precision for intermediate files."
+  },
+  "application_guidance": [
+    "Implement the explicit pipeline order and formulas; creative values are not interchangeable with proprietary editor slider values.",
+    "Develop one representative RAF through your chosen baseline, then compare subject tones and garment colors. Tune the profile against that baseline before batch use.",
+    "Keep exposure and white balance as per-image controls. Do not force a fixed Kelvin value or exposure offset from these references.",
+    "Preserve neutral white clothing. If the face needs more light, prefer a feathered subject adjustment to lifting every shadow in the background.",
+    "The custom app may provide user-painted or detected subject masks, but no executable masks or local-edit amounts are inferred here.",
+    "Keep sharpening, denoising, lens corrections and output-size sharpening separate from the color look.",
+    "To approximate the reference lighting, start with softly lit outdoor portraits. A global color transform cannot recreate depth of field, subject lighting, red hair, flower colors or material texture.",
+    "For a numerical match, supply paired neutral RAW renders and desired edited results; a learned or fitted transform requires known input/output pairs."
+  ]
+}

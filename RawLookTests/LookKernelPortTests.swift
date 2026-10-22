@@ -131,12 +131,10 @@ final class LookKernelPortTests: XCTestCase {
         .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent(
           "Presets/source/warm-garden-portraits.json")
     #else
-      let bundle = Bundle.main
+      // The original v1.0.0 JSON ships in the test bundle; the app bundle has the tuned one.
+      let bundle = Bundle(for: Self.self)
       let url = try XCTUnwrap(
-        bundle.url(
-          forResource: "warm-garden-portraits", withExtension: "json",
-          subdirectory: "Presets/source")
-          ?? bundle.url(forResource: "warm-garden-portraits", withExtension: "json"))
+        bundle.url(forResource: "warm-garden-portraits", withExtension: "json"))
     #endif
     return try Preset.decode(Data(contentsOf: url))
   }
@@ -206,5 +204,116 @@ final class LookKernelPortTests: XCTestCase {
       let gpu = try KernelPort.apply(rgb, preset: preset, strength: 0)
       for (a, b) in zip(gpu, rgb) { XCTAssertEqual(a, b, accuracy: 1e-4) }
     }
+  }
+
+  // MARK: Tuned bundled preset (v1.1.0)
+
+  private func tunedPreset() throws -> Preset {
+    #if os(Linux)
+      let url = URL(fileURLWithPath: #filePath).resolvingSymlinksInPath()
+        .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent(
+          "Presets/warm-garden-portraits.json")
+    #else
+      let url = try XCTUnwrap(
+        Bundle.main.url(forResource: "warm-garden-portraits", withExtension: "json"))
+    #endif
+    return try Preset.decode(Data(contentsOf: url))
+  }
+
+  func testTunedPresetDecodesWithWhiteBalanceShift() throws {
+    let tuned = try tunedPreset()
+    let original = try preset()
+    XCTAssertEqual(tuned.presetVersion, "1.1.0")
+    XCTAssertNil(original.presetVersion)
+    XCTAssertEqual(tuned.id, original.id)
+    XCTAssertEqual(tuned.name, original.name)
+    XCTAssertTrue(try tuned.validate().isEmpty)
+    let shift = try XCTUnwrap(tuned.estimatedCreativePipeline.whiteBalanceShift)
+    XCTAssertGreaterThan(shift.temperatureShiftMireds, 0, "the tuned look warms")
+    XCTAssertNil(original.estimatedCreativePipeline.whiteBalanceShift)
+    // Exposure stays per photo.
+    XCTAssertEqual(tuned.rawDevelopmentContract.rawStageControls.exposureEv.default, 0)
+    XCTAssertEqual(try Preset.decode(try tuned.encoded()), tuned)
+  }
+
+  func testTunedLookMatchesCPUAndHasItsCharacter() throws {
+    let tuned = try tunedPreset()
+    var samples = greys + chart
+    var rng = SystemRandomNumberGenerator()
+    for _ in 0..<500 { samples.append((0..<3).map { _ in Float.random(in: 0...1, using: &rng) }) }
+    for rgb in samples {
+      let gpu = try KernelPort.apply(rgb, preset: tuned, strength: 1)
+      let cpu = LookMath.apply(rgb, pipeline: tuned.estimatedCreativePipeline, strength: 1)
+      for (g, c) in zip(gpu, cpu) { XCTAssertEqual(g, c, accuracy: 1 / 255) }
+    }
+    let black = LookMath.apply([0, 0, 0], pipeline: tuned.estimatedCreativePipeline, strength: 1)
+    let white = LookMath.apply([1, 1, 1], pipeline: tuned.estimatedCreativePipeline, strength: 1)
+    let mid = LookMath.apply([0.5, 0.5, 0.5], pipeline: tuned.estimatedCreativePipeline, strength: 1)
+    XCTAssertGreaterThan(black.min() ?? 0, 0.015, "matte: lifted black point")
+    XCTAssertLessThan(black.max() ?? 1, 0.08)
+    XCTAssertLessThan(white.max() ?? 1, 0.99, "soft highlight roll-off")
+    XCTAssertGreaterThan(white.min() ?? 0, 0.9)
+    XCTAssertGreaterThan(mid[0], mid[2], "warm mids")
+    XCTAssertGreaterThan(mid[1], 0.5, "airy, slightly brighter mids")
+    for rgb in greys {
+      let out = LookMath.apply(rgb, pipeline: tuned.estimatedCreativePipeline, strength: 1)
+      XCTAssertLessThan((out.max() ?? 0) - (out.min() ?? 0), 0.06, "greys only gain a light tint")
+      XCTAssertTrue(out.allSatisfy { $0 > 0 }, "no channel collapses")
+    }
+  }
+
+  // MARK: Preset white-balance shift
+
+  func testWhiteBalanceShiftDefaultsAndValidation() throws {
+    XCTAssertEqual(WhiteBalanceShift.zero.linearGains(), [1, 1, 1])
+    let partial = try JSONDecoder().decode(
+      WhiteBalanceShift.self, from: Data(#"{"temperatureShiftMireds": 8}"#.utf8))
+    XCTAssertEqual(partial, WhiteBalanceShift(temperatureShiftMireds: 8, tintShift: 0))
+    var tuned = try tunedPreset()
+    tuned.estimatedCreativePipeline.whiteBalanceShift = .init(temperatureShiftMireds: 500)
+    XCTAssertThrowsError(try tuned.validate())
+    tuned.estimatedCreativePipeline.whiteBalanceShift = .init(tintShift: .nan)
+    XCTAssertThrowsError(try tuned.validate())
+  }
+
+  func testWhiteBalanceShiftKelvinAndGains() {
+    let warm = WhiteBalanceShift(temperatureShiftMireds: 10)
+    XCTAssertEqual(warm.kelvin(from: 6500), 1e6 / (1e6 / 6500 - 10), accuracy: 0.5)
+    XCTAssertGreaterThan(warm.kelvin(from: 3600), 3600)
+    XCTAssertEqual(WhiteBalanceShift(tintShift: 5).tint(from: 20), 25)
+    let gains = warm.linearGains()
+    XCTAssertGreaterThan(gains[0], 1)
+    XCTAssertLessThan(gains[2], 1)
+    XCTAssertEqual(0.2126 * gains[0] + 0.7152 * gains[1] + 0.0722 * gains[2], 1, accuracy: 1e-5)
+    let cool = WhiteBalanceShift(temperatureShiftMireds: -10).linearGains()
+    XCTAssertLessThan(cool[0], 1)
+    XCTAssertGreaterThan(cool[2], 1)
+    let magenta = WhiteBalanceShift(tintShift: 10).linearGains()
+    XCTAssertLessThan(magenta[1], min(magenta[0], magenta[2]))
+    // Strength scales the shift; zero strength is no shift.
+    XCTAssertTrue(warm.scaled(by: 0).isZero)
+    XCTAssertEqual(warm.scaled(by: 0.5).temperatureShiftMireds, 5)
+    for kelvin: Float in [1700, 2500, 4000, 6500, 10000, 25000] {
+      XCTAssertTrue(WhiteBalanceShift.planckianLinearSRGB(kelvin).allSatisfy { $0 > 0 && $0.isFinite })
+    }
+  }
+
+  func testDevelopAppliesShiftThenLook() throws {
+    let tuned = try tunedPreset()
+    let p = tuned.estimatedCreativePipeline
+    let grey: [Float] = [0.18, 0.18, 0.18]
+    // Strength 0: no shift, no look.
+    let none = LookMath.develop(linear: grey, pipeline: p, strength: 0)
+    for v in none { XCTAssertEqual(v, LookMath.encode(0.18), accuracy: 1e-4) }
+    // Full strength equals look applied to the shifted, encoded grey.
+    let gains = try XCTUnwrap(p.whiteBalanceShift).linearGains()
+    let expected = LookMath.apply(
+      zip(grey, gains).map { LookMath.encode($0 * $1) }, pipeline: p, strength: 1)
+    XCTAssertEqual(LookMath.develop(linear: grey, pipeline: p, strength: 1), expected)
+    // An older preset without a shift develops exactly like apply().
+    let original = try preset().estimatedCreativePipeline
+    XCTAssertEqual(
+      LookMath.develop(linear: grey, pipeline: original, strength: 1),
+      LookMath.apply(grey.map(LookMath.encode), pipeline: original, strength: 1))
   }
 }

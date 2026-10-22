@@ -46,7 +46,11 @@ actor PhotoRenderer {
   func renderImage(
     state: EditState, preset: Preset?, size: CGFloat?, before: Bool, cropEditing: Bool = false
   ) throws -> CIImage {
-    var image = try baseline(state, maxSize: size)
+    let shift =
+      before
+      ? WhiteBalanceShift.zero
+      : (preset?.estimatedCreativePipeline.whiteBalanceShift ?? .zero).scaled(by: state.strength)
+    var image = try baseline(state, maxSize: size, shift: shift)
     if !before {
       if let preset { image = try look(image, preset: preset, state: state) }
       image = adjusted(image, state)
