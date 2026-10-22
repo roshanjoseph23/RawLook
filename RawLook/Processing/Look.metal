@@ -101,13 +101,15 @@ float4 rawLook(coreimage::sampler src, coreimage::sampler table,
     float4 red[16];
     float4 green[16];
     float4 blue[16];
-    // Read numeric data at pixel centers with nearest sampling and no color matching.
+    // The table is an 80x1 image (LookTable): five logical rows of 16 entries laid out side
+    // by side. Read pixel centres with nearest sampling and no colour matching. A single
+    // pixel row avoids Core Image's bottom-left-origin row flip.
     for (int i = 0; i < 16; i++) {
         anchors[i] = table.sample(table.transform(float2(i + 0.5, 0.5)));
-        master[i] = table.sample(table.transform(float2(i + 0.5, 1.5)));
-        red[i] = table.sample(table.transform(float2(i + 0.5, 2.5)));
-        green[i] = table.sample(table.transform(float2(i + 0.5, 3.5)));
-        blue[i] = table.sample(table.transform(float2(i + 0.5, 4.5)));
+        master[i] = table.sample(table.transform(float2(16 + i + 0.5, 0.5)));
+        red[i] = table.sample(table.transform(float2(32 + i + 0.5, 0.5)));
+        green[i] = table.sample(table.transform(float2(48 + i + 0.5, 0.5)));
+        blue[i] = table.sample(table.transform(float2(64 + i + 0.5, 0.5)));
     }
     // Core Image uses premultiplied linear color; LookMath operates on straight sRGB.
     float3 linear = pixel.a > 0 ? pixel.rgb / pixel.a : float3(0);

@@ -24,9 +24,11 @@ extension PhotoRenderer {
     let pixels = try LookTable.pack(anchors: p.hslSectorAdjustments.anchors, curves: curves)
     let data = pixels.withUnsafeBytes { Data($0) }
     // This is numeric data, not color: nil disables color matching of the table.
+    // One pixel high on purpose: Core Image's bottom-left origin flips the rows of a
+    // multi-row bitmap, which fed the anchors to the blue curve (the yellow-image bug).
     let table = CIImage(
-      bitmapData: data, bytesPerRow: 16 * 4 * MemoryLayout<Float>.size,
-      size: CGSize(width: 16, height: 5), format: .RGBAf, colorSpace: nil
+      bitmapData: data, bytesPerRow: LookTable.width * 4 * MemoryLayout<Float>.size,
+      size: CGSize(width: LookTable.width, height: 1), format: .RGBAf, colorSpace: nil
     ).samplingNearest()
     let has: (String, Bool) -> CGFloat = { p.executionOrder.contains($0) && $1 ? 1 : 0 }
     let counts = CIVector(

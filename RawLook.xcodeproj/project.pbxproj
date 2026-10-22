@@ -12,6 +12,7 @@
 		0D91C2F6DF00C0281924DD8D /* PhotoInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF1E7E195349503CC03B360D /* PhotoInfo.swift */; };
 		148B0EC35492ABA89D629CB6 /* LookFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7ED4AD990B06FB233B5E1A1 /* LookFilter.swift */; };
 		191FDFBF4E00373E496F3B19 /* Preset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EF3AFD94DF7804EE34125C3 /* Preset.swift */; };
+		194E1812D708B12EDAC2B66A /* LookKernelPortTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373F8D83D2F2C9438BEE771C /* LookKernelPortTests.swift */; };
 		1BA5BA60BCFC90DE5B1F2C91 /* CropAspect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C0914F4657D0312F72A8444 /* CropAspect.swift */; };
 		20C224A867141F26F49BA982 /* CurveEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DCDF337D875707FC33E2458 /* CurveEditing.swift */; };
 		27D46ED44633A94933D8776F /* Presets in Resources */ = {isa = PBXBuildFile; fileRef = C37CAC513C3258AB45A15483 /* Presets */; };
@@ -76,6 +77,7 @@
 		21B25D729036AC90AA3E47FA /* AdjustmentFilters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdjustmentFilters.swift; sourceTree = "<group>"; };
 		2EA21CA36D019971EB0D6B49 /* PreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewView.swift; sourceTree = "<group>"; };
 		358796C756048555A3E6D949 /* EditorFocusKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorFocusKey.swift; sourceTree = "<group>"; };
+		373F8D83D2F2C9438BEE771C /* LookKernelPortTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookKernelPortTests.swift; sourceTree = "<group>"; };
 		39918188F8EF9531A1F05E97 /* CropGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropGeometry.swift; sourceTree = "<group>"; };
 		424CF7CF5BD911369DFD2A23 /* WhiteBalanceMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhiteBalanceMode.swift; sourceTree = "<group>"; };
 		48C7C6E1E067C6867C8D0630 /* RawLookApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawLookApp.swift; sourceTree = "<group>"; };
@@ -125,6 +127,7 @@
 			isa = PBXGroup;
 			children = (
 				C7D43B9FD9F642832CBE67E4 /* LookCoreTests.swift */,
+				373F8D83D2F2C9438BEE771C /* LookKernelPortTests.swift */,
 				F7C747D8EFA02D22243D2C86 /* PhotoDropTests.swift */,
 			);
 			path = RawLookTests;
@@ -337,6 +340,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				438E1609DE11FFC9490019E8 /* LookCoreTests.swift in Sources */,
+				194E1812D708B12EDAC2B66A /* LookKernelPortTests.swift in Sources */,
 				DB0A74753E06C1F11B904362 /* PhotoDropTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

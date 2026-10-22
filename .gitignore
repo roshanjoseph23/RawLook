@@ -5,3 +5,4 @@ DerivedData/
 LinuxCheck/.build/
 LinuxCheck/Package.resolved
 .DS_Store
+__pycache__/
